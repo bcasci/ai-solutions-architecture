@@ -1,0 +1,365 @@
+---
+title: "Extraction & Transformation"
+description: "How to extract structured data from images, PDFs, and documents using Claude's vision and document processing capabilities, plus the Files API for code execution pipelines."
+section: "patterns"
+order: 4
+tags: ["extraction", "vision", "pdf", "files-api", "code-execution", "structured-output"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Claude can read images, parse PDFs, and execute code against uploaded files. This page covers the practical patterns for extracting structured data from unstructured inputs and building data transformation pipelines.
+
+## Extracting Data from Images
+
+Images are sent as content blocks in user messages, either base64-encoded or via URL. Claude supports up to 100 images per request.
+
+```python
+import base64
+import anthropic
+
+client = anthropic.Anthropic()
+
+def extract_from_image(image_path: str, instruction: str) -> str:
+    """Send an image to Claude with an extraction instruction."""
+    with open(image_path, "rb") as f:
+        image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+    # Determine media type from extension
+    media_types = {".png": "image/png", ".jpg": "image/jpeg",
+                   ".jpeg": "image/jpeg", ".gif": "image/gif",
+                   ".webp": "image/webp"}
+    ext = "." + image_path.rsplit(".", 1)[-1].lower()
+    media_type = media_types.get(ext, "image/png")
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2048,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": image_data,
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": instruction
+                }
+            ]
+        }]
+    )
+    return response.content[0].text
+
+# Basic extraction
+result = extract_from_image("receipt.png", "Extract all line items, totals, and the date. Return as JSON.")
+print(result)
+```
+
+You can also reference images by URL instead of base64:
+
+```python
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "image",
+                "source": {
+                    "type": "url",
+                    "url": "https://example.com/chart.png"
+                }
+            },
+            {"type": "text", "text": "Extract the data series from this chart as a JSON array."}
+        ]
+    }]
+)
+```
+
+### Image Limits and Token Cost
+
+| Constraint | Value |
+| --- | --- |
+| Max images per request | 100 |
+| Max size per image | 5 MB |
+| Max dimensions (single image) | 8000 x 8000 px |
+| Max dimensions (multiple images) | 2000 x 2000 px |
+| Token cost formula | `(width * height) / 750` |
+
+A 2000x2000 image costs roughly 5,333 tokens just for the image data. Size your images appropriately to control costs.
+
+### Structured Image Prompts
+
+Simple prompts ("what do you see?") produce poor extraction results. Provide step-by-step methodology for complex visual analysis:
+
+```python
+structured_prompt = """Analyze this image of an invoice and extract the following:
+
+1. Header information: company name, invoice number, date, due date
+2. Line items: for each item, extract description, quantity, unit price, total
+3. Summary: subtotal, tax amount, tax rate, grand total
+4. Payment details: payment terms, bank details if visible
+
+Return your extraction as a JSON object with keys: header, line_items, summary, payment.
+For any field not visible in the image, use null."""
+
+result = extract_from_image("invoice.png", structured_prompt)
+```
+
+Breaking complex extraction into numbered steps with specific criteria consistently outperforms vague prompts.
+
+## Extracting Data from PDFs
+
+PDF processing uses nearly identical code to images. The key differences: block type is `"document"`, media type is `"application/pdf"`.
+
+```python
+import base64
+import anthropic
+
+client = anthropic.Anthropic()
+
+def extract_from_pdf(pdf_path: str, instruction: str) -> str:
+    """Extract structured data from a PDF."""
+    with open(pdf_path, "rb") as f:
+        file_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4096,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": file_data,
+                    }
+                },
+                {"type": "text", "text": instruction}
+            ]
+        }]
+    )
+    return response.content[0].text
+
+# Extract tables from a financial report
+result = extract_from_pdf(
+    "quarterly_report.pdf",
+    "Extract all financial tables. Return as JSON with table name as key and rows as arrays."
+)
+print(result)
+```
+
+Claude extracts text, embedded images, charts, tables, and document structure from PDFs.
+
+### Adding Citations
+
+Enable citations to track exactly where each piece of extracted data came from in the source document:
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+def extract_with_citations(pdf_path: str, instruction: str) -> dict:
+    """Extract data from PDF with source citations."""
+    import base64
+    with open(pdf_path, "rb") as f:
+        file_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4096,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": file_data,
+                    },
+                    "title": "source_document.pdf",
+                    "citations": {"enabled": True}
+                },
+                {"type": "text", "text": instruction}
+            ]
+        }]
+    )
+    return response
+
+result = extract_with_citations(
+    "contract.pdf",
+    "Extract all monetary amounts and their associated terms."
+)
+# Response content blocks include citation metadata:
+# cited_text, document_title, start_page_number, end_page_number
+for block in result.content:
+    print(block)
+```
+
+Citations are essential for document processing applications where users need to verify extracted data against the source.
+
+## The Files API and Code Execution
+
+The Files API lets you upload files once and reference them by ID, avoiding repeated base64 encoding. Combined with code execution, Claude can run Python against your data in an isolated sandbox.
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+# Step 1: Upload a file
+with open("sales_data.csv", "rb") as f:
+    uploaded = client.files.create(file=f, purpose="vision")
+
+print(f"File ID: {uploaded.id}")
+```
+
+```python
+# Step 2: Send to Claude with code execution enabled
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=4096,
+    messages=[{
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": """Analyze this sales data:
+1. Calculate monthly revenue trends
+2. Identify the top 5 products by total revenue
+3. Generate a bar chart of monthly revenue
+
+Save the chart as 'revenue_chart.png'."""
+            },
+            {"type": "container_upload", "file_id": uploaded.id}
+        ]
+    }],
+    tools=[{"type": "code_execution_20250522", "name": "code_execution"}]
+)
+```
+
+Code execution runs in an isolated Docker container with Python and common data science libraries (pandas, matplotlib, seaborn). No network access is available inside the container.
+
+### Processing Code Execution Results
+
+The response contains multiple block types: text analysis, code that was executed, execution output, and generated files.
+
+```python
+# Step 3: Parse the response for generated files
+for block in response.content:
+    if block.type == "code_execution_output":
+        # Download generated files (charts, reports)
+        file_id = block.file_id
+        file_content = client.files.retrieve_content(file_id)
+        with open("revenue_chart.png", "wb") as f:
+            f.write(file_content)
+        print(f"Downloaded generated file: {file_id}")
+    elif block.type == "text":
+        print(block.text)
+```
+
+:::tip
+The Files API is the only way to get data into and out of the code execution container. Upload input files before the request and download output files from the response.
+:::
+
+## Building a Transformation Pipeline
+
+Combine extraction and code execution to build end-to-end data transformation pipelines:
+
+```python
+import anthropic
+import base64
+import json
+
+client = anthropic.Anthropic()
+
+def transform_pipeline(pdf_path: str, output_format: str = "csv") -> str:
+    """Extract data from PDF, transform with code execution, return result."""
+
+    # Step 1: Extract structured data from the PDF
+    with open(pdf_path, "rb") as f:
+        file_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+    extraction = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4096,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": file_data,
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "Extract all tabular data from this document. Return as a JSON array of objects."
+                }
+            ]
+        }]
+    )
+
+    extracted_data = extraction.content[0].text
+
+    # Step 2: Transform using code execution
+    transform = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=4096,
+        messages=[{
+            "role": "user",
+            "content": f"""Transform this extracted data into {output_format} format.
+Clean any inconsistencies, normalize date formats to ISO 8601, and remove duplicates.
+
+Data:
+{extracted_data}
+
+Save the result as 'output.{output_format}'."""
+        }],
+        tools=[{"type": "code_execution_20250522", "name": "code_execution"}]
+    )
+
+    return transform
+
+result = transform_pipeline("quarterly_report.pdf", "csv")
+```
+
+:::warning
+The code execution tool schema is versioned (`code_execution_20250522`). Check the [Anthropic docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/code-execution) for the current version string.
+:::
+
+## Quick Reference
+
+| Feature | Block type | Media type | Key constraint |
+| --- | --- | --- | --- |
+| Image (base64) | `image` | `image/png`, `image/jpeg`, etc. | 5 MB, 8000px single / 2000px multi |
+| Image (URL) | `image` | N/A (inferred from URL) | Same size limits |
+| PDF | `document` | `application/pdf` | Subject to context window |
+| Plain text doc | `document` | `text/plain` | Subject to context window |
+| File upload | `container_upload` | N/A (uses file ID) | Upload via Files API first |
+| Code execution | Tool: `code_execution_20250522` | N/A | No network access, Python only |
+
+## Related
+
+- [Multimodal Input](/foundations/multimodal-input) --- full reference for image and document content blocks
+- [Structured Output](/foundations/structured-output) --- enforce JSON output format for clean extraction
+- [Streaming](/foundations/streaming) --- stream responses for large document processing
+- [Classification & Routing](/patterns/classification-and-routing) --- route different document types to specialized handlers
+- [Cost Optimization](/production/cost-optimization) --- manage token costs for image-heavy workloads
+- [Anthropic docs: Vision](https://docs.anthropic.com/en/docs/build-with-claude/vision)
+- [Anthropic docs: PDF support](https://docs.anthropic.com/en/docs/build-with-claude/pdf-support)
+- [Anthropic docs: Files API](https://docs.anthropic.com/en/docs/build-with-claude/files)
+- [Anthropic docs: Code execution](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/code-execution)
