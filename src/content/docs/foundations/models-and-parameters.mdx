@@ -1,0 +1,157 @@
+---
+title: "Models & Parameters"
+description: "Choose the right Claude model for your task and tune generation parameters like temperature, top_p, and top_k."
+section: "foundations"
+order: 2
+tags: ["api-basics", "models", "prompt-engineering"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Claude comes in three model tiers. Pick the right one for your task, then adjust generation parameters to control output behavior.
+
+## Model Tiers
+
+| Model | Strengths | Latency | Cost | Best for |
+| --- | --- | --- | --- | --- |
+| **Claude Opus** | Highest reasoning, complex analysis | Highest | Highest | Hard problems, deep analysis, code architecture |
+| **Claude Sonnet** | Strong balance of quality and speed | Medium | Medium | Most production workloads, tool use, RAG |
+| **Claude Haiku** | Fastest, lowest cost | Lowest | Lowest | Classification, extraction, high-volume simple tasks |
+
+For most applications, **start with Sonnet**. Move to Opus if quality is insufficient; move to Haiku if you need lower cost or latency.
+
+## Specifying the Model
+
+Pass the model identifier to the `model` parameter:
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic()
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Explain recursion in one sentence."}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+Model names follow the pattern `claude-{tier}-{version}-{date}`. Check the [model documentation](https://docs.anthropic.com/en/docs/about-claude/models) for current identifiers.
+
+## Generation Parameters
+
+### Temperature
+
+Temperature controls randomness in token selection. Range: `0.0` to `1.0`.
+
+- **0.0**: Deterministic — always picks the highest-probability token
+- **0.3 - 0.5**: Slightly varied but focused
+- **0.7 - 1.0**: Creative and diverse
+
+```python
+# Deterministic output for code generation
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    temperature=0.0,
+    messages=[
+        {"role": "user", "content": "Write a Python function to reverse a linked list."}
+    ]
+)
+```
+
+**Recommended ranges by task:**
+
+| Task type | Temperature | Examples |
+| --- | --- | --- |
+| Code, extraction, classification | 0.0 - 0.3 | SQL generation, entity extraction, routing |
+| Summarization, education | 0.4 - 0.7 | Article summaries, explanations |
+| Creative writing, brainstorming | 0.8 - 1.0 | Marketing copy, story generation |
+
+:::warning
+Temperature is deprecated for models released after Claude Opus 4.6. For those models, only `1.0` is accepted — all other values return a 400 error. Check which model you're using before setting this parameter.
+:::
+
+### top_p (Nucleus Sampling)
+
+`top_p` limits token selection to the smallest set of tokens whose cumulative probability exceeds the threshold. Range: `0.0` to `1.0`.
+
+- **0.9**: Consider tokens covering 90% of the probability mass
+- **1.0**: Consider all tokens (default)
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    top_p=0.9,
+    messages=[
+        {"role": "user", "content": "Suggest five names for a coffee shop."}
+    ]
+)
+```
+
+### top_k
+
+`top_k` limits token selection to the top K most probable tokens.
+
+- Lower values (e.g., 10) produce more focused output
+- Higher values or omitting the parameter allow more diversity
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    top_k=40,
+    messages=[
+        {"role": "user", "content": "Write a haiku about debugging."}
+    ]
+)
+```
+
+:::tip
+In practice, adjusting `temperature` alone covers most use cases. Only reach for `top_p` or `top_k` when you need finer control over output diversity.
+:::
+
+### max_tokens
+
+The maximum number of tokens in Claude's response. This is a hard ceiling — Claude stops generating at this limit.
+
+Set it high enough that Claude can finish its response, but not so high that runaway generations become costly. For most tasks, 1024-4096 is sufficient.
+
+### stop_sequences
+
+An array of strings that cause Claude to stop generating when encountered:
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    stop_sequences=["```"],
+    messages=[
+        {"role": "user", "content": "Write a Python hello world program in a code block."}
+    ]
+)
+```
+
+## Quick Reference
+
+| Parameter | Type | Range | Default | Notes |
+| --- | --- | --- | --- | --- |
+| `model` | string | — | — | Required |
+| `max_tokens` | int | 1+ | — | Required |
+| `temperature` | float | 0.0 - 1.0 | 1.0 | Deprecated on post-Opus 4.6 models |
+| `top_p` | float | 0.0 - 1.0 | — | Nucleus sampling |
+| `top_k` | int | 1+ | — | Top-K sampling |
+| `stop_sequences` | string[] | — | — | Custom stop strings |
+
+## Related
+
+- [Messages API](/foundations/messages-api)
+- [Extended Thinking](/foundations/extended-thinking) — has its own parameter constraints
+- [Cost Optimization](/production/cost-optimization)
+- [Anthropic model docs](https://docs.anthropic.com/en/docs/about-claude/models)

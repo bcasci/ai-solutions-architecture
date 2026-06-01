@@ -1,0 +1,64 @@
+---
+title: "Choose Your Path"
+description: "Decide whether to use the Claude API directly, Claude Code for development tasks, or the Agent SDK for autonomous workflows."
+section: "start-here"
+order: 2
+tags: ["quickstart", "api-basics", "claude-code", "agent-sdk"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+There are three main ways to build with Claude. Each serves a different use case, and you can combine them in a single project.
+
+## API (Messages API)
+
+Use the Messages API when you need **programmatic control** over every request and response.
+
+**Best for:** chatbots, content generation, classification, extraction, RAG pipelines, any custom application where you control the UX.
+
+**You manage:** prompt construction, conversation state, tool definitions, error handling, rate limiting.
+
+Start here: [Messages API](/foundations/messages-api) | [Quick Setup](/start-here/quick-setup)
+
+## Claude Code
+
+Use Claude Code when you want an **AI coding assistant** in your terminal that can read, write, and execute code in your project.
+
+**Best for:** writing and refactoring code, exploring unfamiliar codebases, running multi-step development tasks, creating skills for repeatable workflows.
+
+**You manage:** a `.claude/` config directory, commands, hooks, and skills that shape Claude Code's behavior.
+
+Start here: [Claude Code Basics](/agents/claude-code-basics) | [Hooks](/agents/claude-code-hooks) | [Skills](/agents/claude-code-skills)
+
+## Agent SDK
+
+Use the Agent SDK when you need **autonomous multi-step agents** that plan, use tools, and make decisions in a loop.
+
+**Best for:** complex workflows that require multiple tool calls, branching logic, orchestrated sub-agents, or long-running tasks with human-in-the-loop checkpoints.
+
+**You manage:** agent definitions, tool registrations, orchestration patterns, guardrails.
+
+Start here: [Agent Architecture](/agents/agent-architecture) | [Multi-Agent Systems](/agents/multi-agent-systems)
+
+## Decision Table
+
+| Question | API | Claude Code | Agent SDK |
+| --- | --- | --- | --- |
+| Building a product feature? | Yes | No | Maybe |
+| Automating dev workflows? | No | Yes | No |
+| Need multi-step tool use in production? | Possible | No | Yes |
+| Need fine-grained prompt control? | Yes | Limited | Yes |
+| Need human-in-the-loop? | You build it | Built in | You build it |
+| Fastest time to prototype? | Medium | Fast | Medium |
+
+:::tip
+Most teams start with the Messages API for their product and Claude Code for their development workflow. Add the Agent SDK when you outgrow single-turn tool use.
+:::
+
+## Related
+
+- [Quick Setup](/start-here/quick-setup)
+- [Messages API](/foundations/messages-api)
+- [Agent Architecture](/agents/agent-architecture)
+- [Claude Code Basics](/agents/claude-code-basics)

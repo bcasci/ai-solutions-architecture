@@ -1,0 +1,251 @@
+---
+title: "System Prompts & Prompt Design"
+description: "How to use system prompts, write clear instructions, structure prompts with XML tags, and provide few-shot examples for reliable Claude output."
+section: "foundations"
+order: 3
+tags: ["system-prompts", "prompt-engineering", "prompts", "messages-api"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+System prompts define how Claude behaves. Prompt design techniques control the quality of what it produces. Together, they determine whether you get usable output or a wall of generic text. This page covers the mechanics of system prompts and four high-impact prompt engineering techniques.
+
+## System Prompt Mechanics
+
+System prompts are passed as the `system` parameter — separate from the `messages` array. They set Claude's role, tone, constraints, and behavioral rules.
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic()
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    system="You are a senior Python developer. Give concise code reviews. Flag bugs, suggest improvements, skip praise.",
+    messages=[
+        {"role": "user", "content": "Review this: def add(a, b): return a + b"}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+Without a system prompt, Claude defaults to generic helpful assistant behavior. Even a single sentence dramatically changes output style.
+
+### Conditional System Prompts in Helper Functions
+
+The API does not accept `system=None`. When building a reusable helper, conditionally include the parameter:
+
+```python
+def chat(messages: list, system: str | None = None) -> str:
+    params = {
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": 1024,
+        "messages": messages,
+    }
+    if system:
+        params["system"] = system
+
+    response = client.messages.create(**params)
+    return response.content[0].text
+```
+
+### What Makes a Good System Prompt
+
+Effective system prompts specify both what to do and what not to do:
+
+```
+You are a patient math tutor.
+Guide students to solutions step by step.
+Do not give direct answers.
+Use simple language — assume no prior calculus knowledge.
+When a student is stuck, ask a leading question rather than explaining.
+```
+
+The more specific your constraints, the more consistent the output. Vague prompts like "Be helpful" give Claude maximum degrees of freedom — and maximum variability.
+
+## Be Clear and Direct
+
+The first line of your prompt is the most important. Lead with a direct action verb.
+
+| Weak | Strong |
+| --- | --- |
+| "What can you tell me about solar panels?" | "Write three paragraphs about how solar panels work." |
+| "I was wondering about geothermal energy..." | "Identify three countries that use geothermal energy. Include generation stats." |
+| "What should this person eat?" | "Generate a one-day meal plan for an athlete with these dietary restrictions." |
+
+Use instructions, not questions. "Write," "Create," "Generate," "Analyze," "Identify" — these verbs immediately tell Claude what to produce.
+
+## Be Specific
+
+Specificity eliminates variability. Two types:
+
+**Output quality guidelines** — constrain format, length, structure:
+
+```
+Generate a one-day meal plan for an athlete.
+
+Guidelines:
+1. Include accurate daily calorie totals
+2. Show protein, fat, and carb amounts per meal
+3. Specify timing for each meal
+4. Use only foods that fit the stated restrictions
+5. List all portion sizes in grams
+```
+
+**Process steps** — give Claude an explicit reasoning sequence:
+
+```
+Analyze why this company's stock dropped 15% last quarter.
+
+Steps:
+1. Examine market-wide conditions during the period
+2. Review industry-specific changes
+3. Assess company-specific performance metrics
+4. Consider organizational changes or leadership shifts
+5. Synthesize findings into a ranked list of contributing factors
+```
+
+Combine both types for complex tasks. Guidelines control the output shape; process steps control the reasoning path.
+
+## Structure with XML Tags
+
+XML tags separate instructions from data, code from documentation, and context from queries. Claude handles them natively.
+
+```python
+prompt = """
+<athlete_information>
+- Height: 6'2"
+- Weight: 180 lbs
+- Goal: Build muscle
+- Dietary restrictions: Vegetarian, no soy
+</athlete_information>
+
+<task>
+Generate a one-day meal plan based on the athlete information above.
+Follow the guidelines below.
+</task>
+
+<guidelines>
+1. Include calorie totals per meal
+2. Show macronutrient breakdown
+3. Use only foods matching restrictions
+</guidelines>
+"""
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": prompt}]
+)
+```
+
+Use descriptive tag names: `<sales_records>` beats `<data>`, `<my_code>` beats `<input>`. The tag name communicates purpose to both Claude and human readers.
+
+XML tags are most valuable when:
+- Mixing content types (code + docs + instructions)
+- Including large data payloads
+- Interpolating multiple variables into a prompt template
+
+## Few-Shot Examples
+
+When instructions alone can't capture the pattern you want, show examples. This is especially effective for edge cases, output formatting, and subtle classification rules.
+
+**One-shot** — a single example establishes the pattern:
+
+```python
+prompt = """Classify the sentiment of the following text as Positive, Negative, or Neutral.
+
+<example>
+<input>Great game tonight!</input>
+<output>Positive</output>
+</example>
+
+<input>The product arrived damaged and customer service was unhelpful.</input>
+"""
+```
+
+**Multi-shot** — multiple examples cover edge cases:
+
+```python
+prompt = """Classify the sentiment of the following text as Positive, Negative, or Neutral.
+
+<example>
+<input>Great game tonight!</input>
+<output>Positive</output>
+</example>
+
+<example>
+<input>Oh yeah, I really needed a flight delay tonight! Excellent!</input>
+<output>Negative</output>
+<reasoning>Sarcasm — the literal words are positive but the intent is negative.</reasoning>
+</example>
+
+<example>
+<input>The meeting is at 3pm.</input>
+<output>Neutral</output>
+</example>
+
+<input>Wow, another Monday. Just what I needed.</input>
+"""
+```
+
+:::tip
+Source examples from your best evaluation outputs. If you have an [evaluation pipeline](/patterns/evaluation), use inputs that scored highest. Include a `<reasoning>` tag to explain *why* the output is correct — this helps Claude generalize the pattern, not just mimic the format.
+:::
+
+Use multi-shot when you need to handle sarcasm, ambiguity, varying input formats, or complex output structures like specific JSON schemas.
+
+## Putting It All Together
+
+A production-grade prompt combines all four techniques:
+
+```python
+system = """You are a customer support classifier for an e-commerce platform.
+Classify each message into exactly one category.
+Respond with only the category name — no explanation."""
+
+prompt = """
+<categories>
+ORDER_STATUS, RETURN_REQUEST, PRODUCT_QUESTION, COMPLAINT, OTHER
+</categories>
+
+<examples>
+<example>
+<message>Where's my package? Order #12345</message>
+<category>ORDER_STATUS</category>
+</example>
+<example>
+<message>This broke after one day, I want my money back</message>
+<category>RETURN_REQUEST</category>
+</example>
+<example>
+<message>Does this come in blue?</message>
+<category>PRODUCT_QUESTION</category>
+</example>
+</examples>
+
+<message>I've been waiting two weeks and nobody will answer my emails</message>
+"""
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=50,
+    system=system,
+    messages=[{"role": "user", "content": prompt}]
+)
+
+print(message.content[0].text)
+```
+
+This prompt uses: a system prompt (role + constraint), XML tags (structure), few-shot examples (pattern), and specific instructions (single category, no explanation).
+
+## Related
+
+- [Messages API](/foundations/messages-api) — request structure and response handling
+- [Structured Output](/foundations/structured-output) — getting JSON and other formats from Claude
+- [Classification & Routing](/patterns/classification-and-routing) — applying classification at scale
+- [Evaluation](/patterns/evaluation) — measuring prompt quality with automated pipelines
+- [Anthropic prompt engineering guide](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview)

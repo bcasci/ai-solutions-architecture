@@ -1,0 +1,133 @@
+---
+title: "Extended Thinking"
+description: "Use Claude's extended thinking feature to improve reasoning accuracy on complex problems, with budget control and response parsing."
+section: "foundations"
+order: 6
+tags: ["extended-thinking", "prompt-engineering", "cost", "streaming"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Extended thinking gives Claude scratch paper. Before generating a final answer, Claude works through the problem step by step in a thinking block. This improves accuracy on complex reasoning, math, code analysis, and multi-step problems — at the cost of higher latency and token usage.
+
+## Enabling Extended Thinking
+
+Pass a `thinking` configuration with a token budget. The minimum budget is 1,024 tokens.
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic()
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=4096,
+    thinking={"type": "enabled", "budget_tokens": 2048},
+    messages=[
+        {"role": "user", "content": "What is 27 * 453 + 18 * 92?"}
+    ]
+)
+
+for block in response.content:
+    if block.type == "thinking":
+        print(f"Thinking: {block.thinking}")
+    elif block.type == "text":
+        print(f"Answer: {block.text}")
+```
+
+The response contains two block types: a `thinking` block with Claude's reasoning process, and a `text` block with the final answer.
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic();
+
+const response = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    thinking: { type: "enabled", budget_tokens: 2048 },
+    messages: [
+        { role: "user", content: "What is 27 * 453 + 18 * 92?" }
+    ],
+});
+
+for (const block of response.content) {
+    if (block.type === "thinking") {
+        console.log("Thinking:", block.thinking);
+    } else if (block.type === "text") {
+        console.log("Answer:", block.text);
+    }
+}
+```
+
+## Budget Sizing
+
+`budget_tokens` controls how many tokens Claude can spend reasoning. `max_tokens` must be greater than `budget_tokens` since it covers both thinking and the final response.
+
+| Task complexity | Suggested budget |
+| --- | --- |
+| Simple reasoning | 1,024 - 2,048 |
+| Multi-step analysis | 4,096 - 8,192 |
+| Complex math or code review | 10,000+ |
+
+:::tip
+Start without extended thinking. Only enable it when standard prompting and prompt optimization aren't meeting your accuracy bar. It's a precision tool, not a default.
+:::
+
+## When to Use Extended Thinking
+
+Extended thinking helps most when:
+
+- The task requires multi-step reasoning (math proofs, logic puzzles, complex code analysis)
+- Standard prompting produces inconsistent or incorrect results
+- You need transparency into Claude's reasoning process for debugging or auditing
+
+It helps least when:
+
+- The task is straightforward generation (summarization, translation, simple Q&A)
+- Latency matters more than accuracy
+- Cost constraints are tight — thinking tokens are billed at input rates
+
+## Compatibility Restrictions
+
+Extended thinking cannot be combined with:
+
+- **Temperature** — temperature must not be set (or must be 1.0)
+- **Message pre-filling** — you cannot inject text into the assistant turn
+- **Top-k / top-p** — sampling parameters are not supported
+
+Check the [full compatibility list](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#feature-compatibility) before combining features.
+
+## Handling Redacted Thinking
+
+Claude's safety systems may redact thinking blocks when internal reasoning triggers content filters. Redacted blocks are encrypted — do not attempt to parse their content.
+
+```python
+for block in response.content:
+    if block.type == "thinking":
+        if hasattr(block, "thinking") and block.thinking:
+            print(f"Thinking: {block.thinking}")
+        else:
+            print("Thinking block was redacted")
+    elif block.type == "text":
+        print(f"Answer: {block.text}")
+```
+
+:::warning
+Always pass the complete response — including redacted thinking blocks — back to Claude in multi-turn conversations. Stripping them breaks context continuity.
+:::
+
+## Quick Reference
+
+| Parameter | Description | Constraints |
+| --- | --- | --- |
+| `thinking.type` | `"enabled"` to turn on | Required |
+| `thinking.budget_tokens` | Max tokens for reasoning | Minimum 1,024 |
+| `max_tokens` | Total token limit (thinking + answer) | Must exceed `budget_tokens` |
+
+## Related
+
+- [Models & Parameters](/foundations/models-and-parameters)
+- [Streaming](/foundations/streaming)
+- [Extended thinking docs](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking)

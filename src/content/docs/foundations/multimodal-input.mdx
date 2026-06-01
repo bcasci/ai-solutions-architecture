@@ -1,0 +1,232 @@
+---
+title: "Multimodal Input"
+description: "Send images, PDFs, and documents to Claude via the Messages API, and use citations to trace responses back to source material."
+section: "foundations"
+order: 7
+tags: ["vision", "messages-api", "extraction", "structured-output"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Claude can process images and PDF documents alongside text. You include them as content blocks in the `messages` array — same structure as text, just a different block type.
+
+## Sending Images
+
+Images go in a content block with `type: "image"`. Two delivery methods: base64-encoded data or a URL.
+
+### Base64
+
+```python
+import base64
+from anthropic import Anthropic
+
+client = Anthropic()
+
+with open("photo.png", "rb") as f:
+    image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/png",
+                        "data": image_data,
+                    },
+                },
+                {
+                    "type": "text",
+                    "text": "Describe what you see in this image.",
+                },
+            ],
+        }
+    ],
+)
+
+print(message.content[0].text)
+```
+
+### URL
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "url",
+                        "url": "https://example.com/photo.png",
+                    },
+                },
+                {
+                    "type": "text",
+                    "text": "Describe what you see in this image.",
+                },
+            ],
+        }
+    ],
+)
+```
+
+### Image Limits
+
+| Constraint | Single image | Multiple images |
+| --- | --- | --- |
+| Max dimensions | 8,000 x 8,000 px | 2,000 x 2,000 px |
+| Max file size | 5 MB | 5 MB each |
+| Max per request | 100 images | 100 images |
+
+**Token cost formula:** `tokens = (width x height) / 750`
+
+A 2000x2000 image costs roughly 5,333 tokens. Resize images before sending to control costs.
+
+:::tip
+Apply the same prompt engineering to vision tasks as text. Instead of "What's in this image?", give Claude a specific methodology: numbered steps, criteria to evaluate, and a constrained output format.
+:::
+
+## Sending PDFs
+
+PDFs use `type: "document"` with `media_type: "application/pdf"`. The code is nearly identical to image processing.
+
+```python
+import base64
+from anthropic import Anthropic
+
+client = Anthropic()
+
+with open("report.pdf", "rb") as f:
+    pdf_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=2048,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": pdf_data,
+                    },
+                },
+                {
+                    "type": "text",
+                    "text": "Summarize the key findings in this report.",
+                },
+            ],
+        }
+    ],
+)
+
+print(message.content[0].text)
+```
+
+Claude extracts text, embedded images, tables, and document structure from PDFs. Large PDFs consume significant tokens — send only the pages you need when possible.
+
+:::warning
+The only differences from image code are `type: "document"`, `media_type: "application/pdf"`, and the variable name. Easy to copy-paste incorrectly.
+:::
+
+## Citations
+
+Citations let Claude reference specific parts of source documents, showing users exactly where each claim comes from. Enable them by adding `title` and `citations` fields to the document block.
+
+```python
+import base64
+from anthropic import Anthropic
+
+client = Anthropic()
+
+with open("report.pdf", "rb") as f:
+    pdf_data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=2048,
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": pdf_data,
+                    },
+                    "title": "Q2 Financial Report",
+                    "citations": {"enabled": True},
+                },
+                {
+                    "type": "text",
+                    "text": "What were the revenue figures?",
+                },
+            ],
+        }
+    ],
+)
+
+for block in message.content:
+    if block.type == "text":
+        print(block.text)
+    elif block.type == "cite":
+        print(f"  [{block.document_title}, p.{block.start_page_number}]: {block.cited_text}")
+```
+
+### Citation Response Fields
+
+| Field | Description |
+| --- | --- |
+| `cited_text` | Exact text from the source document |
+| `document_index` | Which document (for multi-document requests) |
+| `document_title` | The title you provided |
+| `start_page_number` / `end_page_number` | Page location (PDFs) |
+| `start_char_index` / `end_char_index` | Character location (plain text) |
+
+Citations also work with plain text documents:
+
+```python
+{
+    "type": "document",
+    "source": {
+        "type": "text",
+        "media_type": "text/plain",
+        "data": article_text,
+    },
+    "title": "Source Article",
+    "citations": {"enabled": True},
+}
+```
+
+For plain text, citations use character positions instead of page numbers.
+
+## Quick Reference
+
+| Input type | Block type | Media type | Key differences |
+| --- | --- | --- | --- |
+| Image (base64) | `image` | `image/png`, `image/jpeg`, etc. | `source.type: "base64"` |
+| Image (URL) | `image` | — | `source.type: "url"` |
+| PDF | `document` | `application/pdf` | `source.type: "base64"` |
+| Plain text doc | `document` | `text/plain` | `source.type: "text"`, data is a string |
+
+## Related
+
+- [Messages API](/foundations/messages-api)
+- [Structured Output](/foundations/structured-output) — combine with vision for typed extraction
+- [Extraction patterns](/patterns/extraction)
+- [Anthropic vision docs](https://docs.anthropic.com/en/docs/build-with-claude/vision)

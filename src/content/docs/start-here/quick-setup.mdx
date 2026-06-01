@@ -1,0 +1,94 @@
+---
+title: "Quick Setup"
+description: "Get an API key, install the SDK, and make your first Claude API call in under 60 seconds."
+section: "start-here"
+order: 1
+tags: ["api-basics", "quickstart", "sdk"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Go from zero to a working Claude API call in three steps. This page assumes you have Python 3.8+ or Node.js 18+ installed.
+
+## 1. Get an API Key
+
+1. Go to [console.anthropic.com](https://console.anthropic.com/)
+2. Create an account or sign in
+3. Navigate to **API Keys** and create a new key
+4. Set it as an environment variable:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+:::tip
+The SDK reads `ANTHROPIC_API_KEY` from the environment automatically. You never need to pass it in code.
+:::
+
+## 2. Install the SDK
+
+**Python:**
+
+```bash
+pip install anthropic
+```
+
+**TypeScript:**
+
+```bash
+npm install @anthropic-ai/sdk
+```
+
+## 3. Make Your First Call
+
+**Python:**
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic()
+
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=256,
+    messages=[
+        {"role": "user", "content": "What is the capital of France? One word."}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+**TypeScript:**
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic();
+
+const message = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 256,
+    messages: [
+        { role: "user", content: "What is the capital of France? One word." }
+    ],
+});
+
+console.log(message.content[0].text);
+```
+
+That's it. You have a working integration.
+
+## What's Next
+
+- Understand the full request/response structure: [Messages API](/foundations/messages-api)
+- Pick the right model for your use case: [Models & Parameters](/foundations/models-and-parameters)
+- Decide which integration path fits best: [Choose Your Path](/start-here/choose-your-path)
+
+## Related
+
+- [Messages API](/foundations/messages-api)
+- [Anthropic Console](https://console.anthropic.com/)
+- [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python)
+- [Anthropic TypeScript SDK](https://github.com/anthropics/anthropic-sdk-typescript)
