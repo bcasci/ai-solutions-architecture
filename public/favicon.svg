@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <rect width="32" height="32" rx="6" fill="#0a0a0a"/>
   <!-- Left curly bracket -->
-  <path d="M11.5 7C9.5 7 8 8.5 8 10v3c0 1.2-.8 1.8-1.5 2 .7.2 1.5.8 1.5 2v3c0 1.5 1.5 3 3.5 3" stroke="#818cf8" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M11 7C9 7 7.5 8.5 7.5 10.5v2.5c0 1.2-.8 1.8-1.5 2 .7.2 1.5.8 1.5 2v2.5c0 2 1.5 3.5 3.5 3.5" stroke="#818cf8" stroke-width="1.8" stroke-linecap="round"/>
   <!-- Right curly bracket -->
-  <path d="M20.5 7c2 0 3.5 1.5 3.5 3v3c0 1.2.8 1.8 1.5 2-.7.2-1.5.8-1.5 2v3c0 1.5-1.5 3-3.5 3" stroke="#818cf8" stroke-width="1.8" stroke-linecap="round"/>
-  <!-- Center sparkle -->
-  <path d="M16 10l.9 3.1L20 14l-3.1.9L16 18l-.9-3.1L12 14l3.1-.9z" fill="#818cf8"/>
-  <circle cx="16" cy="14" r="1.1" fill="#818cf8"/>
+  <path d="M21 7c2 0 3.5 1.5 3.5 3.5v2.5c0 1.2.8 1.8 1.5 2-.7.2-1.5.8-1.5 2v2.5c0 2-1.5 3.5-3.5 3.5" stroke="#818cf8" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Center asterisk -->
+  <line x1="16" y1="10" x2="16" y2="20" stroke="#818cf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="11.7" y1="12.5" x2="20.3" y2="17.5" stroke="#818cf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="11.7" y1="17.5" x2="20.3" y2="12.5" stroke="#818cf8" stroke-width="2" stroke-linecap="round"/>
 </svg>
