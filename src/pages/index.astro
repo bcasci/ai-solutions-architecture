@@ -1,14 +1,114 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Sidebar from '../components/Sidebar.astro';
+import MobileMenuButton from '../components/MobileMenuButton.astro';
+import { getCollection } from 'astro:content';
+
+const docs = await getCollection('docs', ({ data }) => !data.draft);
+
+const sectionMeta = [
+  { key: 'start-here', label: 'Start Here', description: 'Get up and running with Claude in 60 seconds.', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { key: 'foundations', label: 'Foundations', description: 'Core API concepts every builder needs.', color: 'text-blue-600', bg: 'bg-blue-50' },
+  { key: 'patterns', label: 'Patterns', description: 'Battle-tested architectures for common tasks.', color: 'text-violet-600', bg: 'bg-violet-50' },
+  { key: 'agents', label: 'Agents', description: 'Autonomous systems, MCP, and Claude Code.', color: 'text-orange-600', bg: 'bg-orange-50' },
+  { key: 'production', label: 'Production', description: 'Ship reliably at scale.', color: 'text-red-600', bg: 'bg-red-50' },
+  { key: 'recipes', label: 'Recipes', description: 'Copy-paste solutions for common tasks.', color: 'text-amber-600', bg: 'bg-amber-50' },
+  { key: 'reference', label: 'Reference', description: 'Quick lookups and external resources.', color: 'text-gray-600', bg: 'bg-gray-50' },
+];
+
+const sections = sectionMeta.map((meta) => ({
+  ...meta,
+  pages: docs
+    .filter((d) => d.data.section === meta.key)
+    .sort((a, b) => a.data.order - b.data.order),
+})).filter((s) => s.pages.length > 0);
 ---
 
-<BaseLayout title="Solutions Architecture">
-  <main class="mx-auto max-w-3xl px-6 py-16">
-    <h1 class="text-4xl font-bold tracking-tight text-gray-900">
-      Solutions Architecture
-    </h1>
-    <p class="mt-4 text-lg text-gray-600">
-      Anthropic solutions architecture resources. Content coming soon.
-    </p>
-  </main>
+<BaseLayout title="Solutions Architecture — Anthropic">
+  <div class="flex min-h-screen">
+    <Sidebar />
+    <main class="min-w-0 flex-1">
+      <!-- Hero -->
+      <div class="relative overflow-hidden border-b border-gray-200 bg-gray-950 px-8 py-20 lg:px-12">
+        <!-- Decorative node graph -->
+        <svg class="absolute right-0 top-0 h-full w-2/3 opacity-[0.07]" viewBox="0 0 600 400" fill="none">
+          <!-- Nodes -->
+          <circle cx="420" cy="80" r="6" fill="rgb(129,140,248)" />
+          <circle cx="520" cy="140" r="4" fill="rgb(129,140,248)" />
+          <circle cx="350" cy="180" r="8" fill="rgb(129,140,248)" />
+          <circle cx="480" cy="240" r="5" fill="rgb(129,140,248)" />
+          <circle cx="300" cy="300" r="6" fill="rgb(129,140,248)" />
+          <circle cx="550" cy="320" r="4" fill="rgb(129,140,248)" />
+          <circle cx="400" cy="350" r="7" fill="rgb(129,140,248)" />
+          <circle cx="250" cy="120" r="3" fill="rgb(129,140,248)" />
+          <circle cx="200" cy="220" r="5" fill="rgb(129,140,248)" />
+          <!-- Connections -->
+          <line x1="420" y1="80" x2="520" y2="140" stroke="rgb(129,140,248)" stroke-width="1" />
+          <line x1="420" y1="80" x2="350" y2="180" stroke="rgb(129,140,248)" stroke-width="1" />
+          <line x1="520" y1="140" x2="480" y2="240" stroke="rgb(129,140,248)" stroke-width="1" />
+          <line x1="350" y1="180" x2="480" y2="240" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <line x1="350" y1="180" x2="300" y2="300" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <line x1="480" y1="240" x2="550" y2="320" stroke="rgb(129,140,248)" stroke-width="1" />
+          <line x1="480" y1="240" x2="400" y2="350" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <line x1="300" y1="300" x2="400" y2="350" stroke="rgb(129,140,248)" stroke-width="1" />
+          <line x1="550" y1="320" x2="400" y2="350" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <line x1="250" y1="120" x2="350" y2="180" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <line x1="250" y1="120" x2="420" y2="80" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <line x1="200" y1="220" x2="300" y2="300" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <line x1="200" y1="220" x2="350" y2="180" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <!-- Rings around key nodes -->
+          <circle cx="350" cy="180" r="20" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <circle cx="480" cy="240" r="16" stroke="rgb(129,140,248)" stroke-width="0.5" />
+          <circle cx="400" cy="350" r="18" stroke="rgb(129,140,248)" stroke-width="0.5" />
+        </svg>
+        <div class="relative max-w-2xl">
+          <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            Build with Claude
+          </h1>
+          <p class="mt-4 text-lg text-gray-400">
+            Patterns, code, and practical guidance for building with Anthropic's Claude.
+            No lectures — just what works.
+          </p>
+          {sections.length > 0 && sections[0].pages.length > 0 && (
+            <a
+              href={`/${sections[0].pages[0].id}`}
+              class="mt-8 inline-flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-400"
+            >
+              Get started
+              <svg class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z" />
+              </svg>
+            </a>
+          )}
+        </div>
+      </div>
+
+      <!-- Section Cards -->
+      <div class="mx-auto max-w-4xl px-8 py-16 lg:px-12">
+        <div class="grid gap-6 sm:grid-cols-2">
+          {sections.map((section) => (
+            <div class:list={['rounded-xl border border-gray-200 p-6 transition-shadow hover:shadow-md', section.bg]}>
+              <h2 class:list={['text-lg font-semibold', section.color]}>
+                {section.label}
+              </h2>
+              <p class="mt-1 text-sm text-gray-600">{section.description}</p>
+              <ul class="mt-4 space-y-1">
+                {section.pages.map((page) => (
+                  <li>
+                    <a
+                      href={`/${page.id}`}
+                      class="text-sm text-gray-700 hover:text-gray-900 hover:underline"
+                    >
+                      {page.data.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
+    <MobileMenuButton />
+  </div>
 </BaseLayout>
