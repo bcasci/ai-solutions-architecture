@@ -33,3 +33,4 @@ playwright-report/
 # transient working artifacts
 tmp/
 *.png
+!public/og-image.png

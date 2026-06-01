@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import MobileMenuButton from '../components/MobileMenuButton.astro';
+import { SITE } from '../consts';
 
 interface SectionPage {
   title: string;
@@ -41,7 +42,7 @@ const sectionLabel = sectionLabels[section] ?? section.replace(/-/g, ' ');
 const showSectionNav = sectionPages.length >= 2;
 ---
 
-<BaseLayout title={`${title} — Claude Solutions`}>
+<BaseLayout title={`${title} — ${SITE.title}`} description={description} canonicalPath={Astro.url.pathname}>
   <div class="flex min-h-screen">
     <Sidebar />
     <main class="min-w-0 flex-1">
