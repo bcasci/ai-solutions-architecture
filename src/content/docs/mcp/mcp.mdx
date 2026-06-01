@@ -8,6 +8,21 @@ lastVerified: "2026-06-01"
 ---
 MCP (Model Context Protocol) is a standard communication layer that lets you give Claude access to external tools and data without writing integration code from scratch. Instead of defining tool schemas and execution functions yourself, you connect to MCP servers that provide them pre-built.
 
+## When to Use MCP
+
+If you've already seen [Tool Use](/the-api/tool-use), you know you can define tools directly in your API calls. MCP is an alternative path — here's when each makes sense:
+
+| | Direct tool definitions | MCP |
+| --- | --- | --- |
+| **Setup** | Define JSON schemas inline in your API call | Run an MCP server, connect your client |
+| **Best for** | App-specific tools, few in number, tightly coupled to your code | Reusable tools, shared across projects or teams |
+| **Ecosystem** | You build everything | Pre-built servers exist for GitHub, databases, Slack, file systems, and more |
+| **Overhead** | None — it's just API parameters | Server process + protocol layer |
+
+**Start with direct tool definitions** if you're building one app with a handful of custom tools. **Move to MCP** when you find yourself duplicating tool definitions across projects, want to share tools across a team, or want to use the growing ecosystem of pre-built MCP servers.
+
+Many production systems use both: direct tools for app-specific logic, MCP for standard integrations.
+
 ## Architecture
 
 An MCP system has two sides:

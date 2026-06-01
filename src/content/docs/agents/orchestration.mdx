@@ -282,13 +282,23 @@ Each parallel call has its own latency and token cost. Parallelization improves 
 
 ## Choosing a Pattern
 
-| Pattern | Structure | Best for | Trade-off |
-| --- | --- | --- | --- |
-| Routing | Fan-out to one handler | Diverse input types needing specialized handling | Extra classification call |
-| Chaining | Sequential steps | Complex tasks with multiple constraints | Added latency (sequential) |
-| Parallelization | Fan-out to all, aggregate | Multi-criteria evaluation or analysis | Higher total API cost |
+Start by asking three questions about your task:
 
-These patterns compose. A routing step can send inputs to different chains, each of which may use parallelization internally. Start with the simplest pattern that meets your quality bar, then add complexity only where the scores justify it.
+1. **Does the input type determine what happens next?** Different input categories need different prompts, tools, or pipelines → **Route** first, then handle each category with the appropriate pattern.
+
+2. **Do the steps depend on each other?** Step 2 needs the output of step 1 → **Chain** them sequentially. Each step gets a focused prompt that builds on the previous output.
+
+3. **Are the subtasks independent?** Multiple evaluations, checks, or analyses that don't need each other's output → **Parallelize** and aggregate the results.
+
+| Pattern | Choose when | Example | Trade-off |
+| --- | --- | --- | --- |
+| **Routing** | Input varies by type and each type needs different handling | Support tickets: billing → billing pipeline, technical → technical pipeline | Extra classification call, but each handler is specialized |
+| **Chaining** | Task has ordered steps where each builds on the last | Draft → fact-check → revise → format | Added latency (sequential), but each step is focused |
+| **Parallelization** | Subtasks are independent and can run concurrently | Grade an essay on clarity, accuracy, and tone simultaneously | Higher total API cost, but lower wall-clock time |
+
+These patterns compose. A routing step can send inputs to different chains, each of which may use parallelization internally. A common production pattern: route by input type, chain within each handler, parallelize independent evaluations at the end.
+
+See [Choosing Your Strategy](/start-here/choosing-your-strategy) for the broader decision of when orchestration is the right approach vs. a single prompt or an agent loop.
 
 ## Related
 
