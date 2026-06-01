@@ -186,7 +186,7 @@ graph LR
     MCP --> API[External API]
 ```
 
-This is powerful for teams building agent systems: one MCP server wraps your internal APIs, and every agent — regardless of who built it — gets the same tool interface. See [MCP](/agents/mcp) for building servers and clients.
+This is powerful for teams building agent systems: one MCP server wraps your internal APIs, and every agent — regardless of who built it — gets the same tool interface. See [MCP](/mcp/mcp) for building servers and clients.
 
 The key advantage over hardcoded tool definitions: when you update the MCP server, every connected agent picks up the changes on the next `list_tools()` call. No code changes in any agent.
 
@@ -297,7 +297,7 @@ flowchart TD
 ## Related
 
 - [Agent Architecture](/agents/agent-architecture) — workflows vs agents, orchestration patterns
-- [MCP (Model Context Protocol)](/agents/mcp) — building MCP servers for shared tool access
+- [MCP (Model Context Protocol)](/mcp/mcp) — building MCP servers for shared tool access
 - [Claude Code Skills](/agents/claude-code-skills) — skills and subagent configuration
 - [Claude Code Hooks](/agents/claude-code-hooks) — event-driven automation including AI-reviews-AI
 - [Cost Optimization](/production/cost-optimization) — managing costs in multi-agent systems

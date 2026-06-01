@@ -6,7 +6,9 @@ const EXPECTED_SECTIONS = [
   "Start Here",
   "The API",
   "Prompting",
+  "Retrieval",
   "Agents",
+  "MCP",
   "Production",
   "Recipes",
   "Reference",
@@ -76,7 +78,7 @@ test.describe("Cross-links", () => {
     const agentPages = [
       "/agents/agent-architecture",
       "/agents/orchestration",
-      "/agents/rag",
+      "/retrieval/rag",
     ];
     for (const pagePath of agentPages) {
       await page.goto(`${BASE}${pagePath}`);
