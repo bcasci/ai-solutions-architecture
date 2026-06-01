@@ -33,3 +33,21 @@ const sectionLabel = section.replace(/-/g, ' ');
     <MobileMenuButton />
   </div>
 </BaseLayout>
+
+<style is:global>
+  .mermaid {
+    display: flex;
+    justify-content: center;
+    margin: 1.5em 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+  /* Prevent prose styles from interfering with SVG text */
+  .prose .mermaid * {
+    all: revert;
+  }
+</style>

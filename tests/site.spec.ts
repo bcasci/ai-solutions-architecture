@@ -48,6 +48,15 @@ test.describe("Homepage", () => {
   });
 });
 
+test.describe("Mermaid diagrams", () => {
+  test("renders SVG diagrams on tool-use page", async ({ page }) => {
+    await page.goto(`${BASE}/the-api/tool-use`);
+    await page.waitForSelector(".mermaid svg", { timeout: 10000 });
+    const diagrams = await page.locator(".mermaid svg").count();
+    expect(diagrams).toBeGreaterThanOrEqual(1);
+  });
+});
+
 test.describe("Cross-links", () => {
   test("internal links on Messages API page resolve", async ({ page }) => {
     await page.goto(`${BASE}/the-api/messages-api`);
