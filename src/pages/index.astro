@@ -7,15 +7,15 @@ import { getCollection } from 'astro:content';
 const docs = await getCollection('docs', ({ data }) => !data.draft);
 
 const sectionMeta = [
-  { key: 'start-here', label: 'Start Here', description: 'Get up and running with Claude in 60 seconds.', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { key: 'the-api', label: 'The API', description: 'Request mechanics — models, messages, streaming, multimodal input, and tool use.', color: 'text-blue-600', bg: 'bg-blue-50' },
-  { key: 'prompting', label: 'Prompting', description: 'Prompt engineering — system prompts, structured output, evaluation, and extraction.', color: 'text-cyan-600', bg: 'bg-cyan-50' },
-  { key: 'retrieval', label: 'RAG (Retrieval Augmented Generation)', description: 'Give Claude knowledge it doesn\'t have — chunking, embeddings, and RAG pipelines.', color: 'text-violet-600', bg: 'bg-violet-50' },
-  { key: 'agents', label: 'Agents', description: 'Orchestration, autonomous systems, multi-agent patterns, and Claude Code.', color: 'text-orange-600', bg: 'bg-orange-50' },
-  { key: 'mcp', label: 'MCP', description: 'Model Context Protocol — the standard for connecting Claude to external tools and data.', color: 'text-teal-600', bg: 'bg-teal-50' },
-  { key: 'production', label: 'Production', description: 'Ship reliably at scale.', color: 'text-red-600', bg: 'bg-red-50' },
-  { key: 'recipes', label: 'Recipes', description: 'Copy-paste solutions for common tasks.', color: 'text-amber-600', bg: 'bg-amber-50' },
-  { key: 'reference', label: 'Reference', description: 'Quick lookups and external resources.', color: 'text-gray-600', bg: 'bg-gray-50' },
+  { key: 'start-here', label: 'Start Here', description: 'Get up and running with Claude in 60 seconds.' },
+  { key: 'the-api', label: 'The API', description: 'Request mechanics — models, messages, streaming, multimodal input, and tool use.' },
+  { key: 'prompting', label: 'Prompting', description: 'Prompt engineering — system prompts, structured output, evaluation, and extraction.' },
+  { key: 'retrieval', label: 'RAG (Retrieval Augmented Generation)', description: 'Give Claude knowledge it doesn\'t have — chunking, embeddings, and RAG pipelines.' },
+  { key: 'agents', label: 'Agents', description: 'Orchestration, autonomous systems, multi-agent patterns, and Claude Code.' },
+  { key: 'mcp', label: 'MCP', description: 'Model Context Protocol — the standard for connecting Claude to external tools and data.' },
+  { key: 'production', label: 'Production', description: 'Ship reliably at scale.' },
+  { key: 'recipes', label: 'Recipes', description: 'Copy-paste solutions for common tasks.' },
+  { key: 'reference', label: 'Reference', description: 'Quick lookups and external resources.' },
 ];
 
 const sections = sectionMeta.map((meta) => ({
@@ -31,10 +31,9 @@ const sections = sectionMeta.map((meta) => ({
     <Sidebar />
     <main class="min-w-0 flex-1">
       <!-- Hero -->
-      <div class="relative overflow-hidden border-b border-gray-200 bg-gray-950 px-8 py-20 lg:px-12">
+      <div class="relative overflow-hidden border-b border-gray-200 bg-gray-950 px-8 py-20 dark:border-gray-800 lg:px-12">
         <!-- Decorative node graph -->
         <svg class="absolute right-0 top-0 h-full w-2/3 opacity-[0.07]" viewBox="0 0 600 400" fill="none">
-          <!-- Nodes -->
           <circle cx="420" cy="80" r="6" fill="rgb(129,140,248)" />
           <circle cx="520" cy="140" r="4" fill="rgb(129,140,248)" />
           <circle cx="350" cy="180" r="8" fill="rgb(129,140,248)" />
@@ -44,7 +43,6 @@ const sections = sectionMeta.map((meta) => ({
           <circle cx="400" cy="350" r="7" fill="rgb(129,140,248)" />
           <circle cx="250" cy="120" r="3" fill="rgb(129,140,248)" />
           <circle cx="200" cy="220" r="5" fill="rgb(129,140,248)" />
-          <!-- Connections -->
           <line x1="420" y1="80" x2="520" y2="140" stroke="rgb(129,140,248)" stroke-width="1" />
           <line x1="420" y1="80" x2="350" y2="180" stroke="rgb(129,140,248)" stroke-width="1" />
           <line x1="520" y1="140" x2="480" y2="240" stroke="rgb(129,140,248)" stroke-width="1" />
@@ -58,7 +56,6 @@ const sections = sectionMeta.map((meta) => ({
           <line x1="250" y1="120" x2="420" y2="80" stroke="rgb(129,140,248)" stroke-width="0.5" />
           <line x1="200" y1="220" x2="300" y2="300" stroke="rgb(129,140,248)" stroke-width="0.5" />
           <line x1="200" y1="220" x2="350" y2="180" stroke="rgb(129,140,248)" stroke-width="0.5" />
-          <!-- Rings around key nodes -->
           <circle cx="350" cy="180" r="20" stroke="rgb(129,140,248)" stroke-width="0.5" />
           <circle cx="480" cy="240" r="16" stroke="rgb(129,140,248)" stroke-width="0.5" />
           <circle cx="400" cy="350" r="18" stroke="rgb(129,140,248)" stroke-width="0.5" />
@@ -89,17 +86,17 @@ const sections = sectionMeta.map((meta) => ({
       <div class="mx-auto max-w-4xl px-8 py-16 lg:px-12">
         <div class="grid gap-6 sm:grid-cols-2">
           {sections.map((section) => (
-            <div class:list={['rounded-xl border border-gray-200 p-6 transition-shadow hover:shadow-md', section.bg]}>
-              <h2 class:list={['text-lg font-semibold', section.color]}>
+            <div class="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700">
+              <h2 class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
                 {section.label}
               </h2>
-              <p class="mt-1 text-sm text-gray-600">{section.description}</p>
+              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{section.description}</p>
               <ul class="mt-4 space-y-1">
                 {section.pages.map((page) => (
                   <li>
                     <a
                       href={`/${page.id}`}
-                      class="text-sm text-gray-700 hover:text-gray-900 hover:underline"
+                      class="text-sm text-gray-700 hover:text-indigo-600 hover:underline dark:text-gray-300 dark:hover:text-indigo-400"
                     >
                       {page.data.title}
                     </a>

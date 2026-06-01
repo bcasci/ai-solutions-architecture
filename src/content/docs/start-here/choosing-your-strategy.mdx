@@ -15,30 +15,34 @@ This page covers three decisions:
 
 ## Complexity Ladder
 
-Start simple. Move up a step only when the simpler approach isn't enough.
+Start simple. Move up a step only when the simpler approach isn't enough. These patterns compose — a router can dispatch to chains, and a chain step can parallelize internally. Pick the simplest combination that meets your quality bar.
 
 **1. Single Prompt**
-**Use when:** the task is self-contained and one Claude call can handle it.
-One API call, one response. This covers more than you think — summarization, classification, extraction, code generation, Q&A over short documents. Try this first.
+**Use when:** the task is self-contained, the context fits in the window, and one Claude call can handle it.
+One API call, one response. This covers more than you think — summarization, classification, extraction, short code generation, Q&A over small documents. Try this first.
 
 **2. [Chain](/agents/orchestration)**
-**Use when:** the task has ordered steps where each builds on the last.
+**Use when:** the output of step N depends on step N-1 being complete.
 Sequential Claude calls, each with a focused prompt. Draft → revise → format. Generate → validate → fix. Each step is simpler and more reliable than asking one prompt to do everything.
 
-**3. [Parallelize](/agents/orchestration)**
-**Use when:** subtasks are independent and don't need each other's output.
-Run multiple Claude calls concurrently, then aggregate results. Grade an essay on clarity, accuracy, and tone simultaneously. Faster wall-clock time than chaining, but higher total API cost.
-
-**4. [Route](/agents/orchestration)**
+**3. [Route](/agents/orchestration)**
 **Use when:** different input types need different handling.
-A classifier sends each input to a specialized pipeline. Support tickets: billing → billing handler, technical → technical handler. Each handler gets its own prompt, tools, and context.
+A classifier sends each input to a specialized pipeline. Support tickets: billing → billing handler, technical → technical handler. Each handler gets its own prompt, tools, and context. Simpler than it sounds — it's just a classifier plus a dispatch table.
 
-**5. [Agent Loop](/agents/agent-architecture)**
-**Use when:** you can't predetermine the steps — Claude needs to plan and adapt.
-Give Claude tools and a goal. It decides what to do, observes results, and iterates. Use this for open-ended tasks like "research this topic and write a report." Higher flexibility, lower predictability.
+**4. [Parallelize](/agents/orchestration)**
+**Use when:** subtasks are independent and don't need each other's output.
+Run multiple Claude calls concurrently, then aggregate results. Process 50 customer reviews for sentiment, themes, and action items simultaneously. Faster wall-clock time than chaining, but higher total API cost and requires concurrency management.
+
+**5. Evaluator-Optimizer**
+**Use when:** output quality varies and you need iterative refinement.
+One Claude call generates, another evaluates, loop until a quality threshold is met. Code generation with test validation, content with quality scoring, SQL with execution verification. The iteration count isn't predetermined — that's what distinguishes this from a simple chain.
+
+**6. [Agent Loop](/agents/agent-architecture)**
+**Use when:** you can't predetermine the steps and Claude needs tools to interact with the world.
+Give Claude tools and a goal. It decides what to do, observes results, and iterates. Research across multiple sources, multi-step debugging, complex data analysis. Higher flexibility, lower predictability.
 
 :::tip
-Default to the simplest pattern that works. A chain of 3 focused prompts will outperform a general-purpose agent on most structured tasks — and it's far easier to test, debug, and maintain.
+Everything from Single Prompt through Evaluator-Optimizer has predictable execution — you know the steps, cost, and latency upfront. Agent loops are fundamentally different: non-deterministic, potentially unbounded, and harder to debug. Cross that line deliberately.
 :::
 
 ## Knowledge Strategy
@@ -47,14 +51,15 @@ How you give Claude information depends on how much you have and how often it ch
 
 | Strategy | How it works | Use when | Tradeoff |
 | --- | --- | --- | --- |
-| **Direct context** | Paste content into the prompt | Document fits in the context window with room for the answer | Simplest. No infrastructure. Cost scales with document size. |
-| **[RAG](/retrieval/rag)** | Chunk, embed, retrieve relevant pieces | Documents are too large for context, or you have many documents | Better cost/latency at scale. Requires preprocessing pipeline. |
-| **Tool-based retrieval** | Give Claude a search [tool](/the-api/tool-use) and let it query on demand | Data is live, dynamic, or requires structured queries (SQL, APIs) | Most flexible. Claude decides what to search for. Higher latency per retrieval. |
+| **Direct context** | Paste content into the prompt | Content fits in the context window and queries are infrequent | Simplest. No infrastructure. Cost scales with input size per query. Quality may degrade for very long contexts. |
+| **Direct context + [prompt caching](/production/cost-optimization)** | Cache a large static prefix, pay full cost only once | Same content is queried repeatedly | ~90% input cost reduction on cached tokens. Best of both worlds for static corpora under ~200K tokens. |
+| **[RAG](/retrieval/rag)** | Chunk, embed, retrieve relevant pieces | Documents exceed the context window, or you have many documents | Better cost/latency at scale. Requires embedding pipeline, vector store, and chunking strategy tuning. |
+| **Tool-based retrieval** | Give Claude a search [tool](/the-api/tool-use) and let it query on demand | Data is live, dynamic, or requires structured queries (SQL, APIs) | Most flexible. Claude decides what to search for. May make multiple sequential tool calls, increasing latency. |
 
 **Decision shortcut:**
-- **< 50 pages** of static content → try direct context first. Claude's 200K token window is large.
+- **< 50 pages** of static content → try direct context first. Add [prompt caching](/production/cost-optimization) if you're querying the same content repeatedly.
 - **50+ pages** or growing corpus → [RAG](/retrieval/rag). Preprocess once, retrieve per query.
-- **Live data** (databases, APIs, dashboards) → tool-based retrieval. RAG can't index what changes every minute.
+- **Live data** (databases, APIs, dashboards) → tool-based retrieval. RAG adds indexing lag that makes it a poor fit for fast-changing data.
 
 You can combine strategies. A common production pattern: RAG for your documentation corpus + a tool for live database queries.
 
@@ -62,14 +67,15 @@ You can combine strategies. A common production pattern: RAG for your documentat
 
 When Claude needs to call external services, you have two paths.
 
-| Approach | How it works | Use when |
-| --- | --- | --- |
-| **[Direct tool definitions](/the-api/tool-use)** | Define tools inline in your API call with JSON schemas | Tools are specific to your app, few in number, tightly coupled to your logic |
-| **[MCP](/mcp/mcp)** | Connect to MCP servers that expose tools via a standard protocol | Tools are reusable across projects, shared with a team, or available as pre-built servers (GitHub, databases, etc.) |
+| Approach | How it works | Use when | Tradeoff |
+| --- | --- | --- | --- |
+| **[Direct tool definitions](/the-api/tool-use)** | Define tools inline in your API call with JSON schemas | Tools are specific to your app, few in number, tightly coupled to your logic | Zero overhead. You build and maintain everything. Gets unwieldy past ~15 tools. |
+| **[MCP](/mcp/mcp)** | Connect to MCP servers that expose tools via a standard protocol | Tools are reusable across projects, shared with a team, or available as pre-built servers | Ecosystem of pre-built servers. Adds IPC latency and a server process to manage. |
 
 **Decision shortcut:**
-- Building **one app** with **a few custom tools** → define them directly. Less moving parts.
-- Tools should be **reusable**, **shared across projects**, or you want to use the **pre-built MCP ecosystem** → MCP. One server wraps a service; any client can use it.
+- Building **one app** with **a handful of custom tools** → define them directly. Fewer moving parts.
+- Tools should be **reusable**, **shared across projects**, or you want the **pre-built MCP ecosystem** → MCP.
+- **15+ tools** → consider MCP to avoid prompt bloat and improve tool selection accuracy.
 - Need **both** → start with direct tools, extract to MCP servers when you find yourself duplicating tool definitions across projects.
 
 ## Combining Strategies
@@ -79,10 +85,11 @@ Real applications mix patterns. Here's how common use cases map:
 | Use case | Complexity | Knowledge | Integration |
 | --- | --- | --- | --- |
 | Customer support bot | Route by ticket type → chain per type | RAG over help docs | Direct tools for ticket system |
-| Code review assistant | Single prompt | Direct context (the diff) | None |
+| Code review assistant | Single prompt (small diffs) or chain (large PRs) | Direct context + tool retrieval for related files | Direct tools for CI/linting |
 | Research agent | Agent loop | Tool-based retrieval | MCP for web search + databases |
-| Document Q&A | Single prompt or chain | RAG | None |
-| Data pipeline | Chain | Direct context | Direct tools for database + APIs |
+| Document Q&A | Single prompt | RAG (or direct context + caching for small corpora) | None |
+| Content moderation | Single prompt with few-shot examples | Direct context | None |
+| Data pipeline | Chain | Tool-based retrieval (read from source) | Direct tools for database + APIs |
 
 ## Related
 
@@ -92,3 +99,4 @@ Real applications mix patterns. Here's how common use cases map:
 - [What is RAG](/retrieval/rag) — retrieval pipeline overview
 - [Tool Use](/the-api/tool-use) — giving Claude tools
 - [MCP](/mcp/mcp) — the standard protocol for tool integration
+- [Cost Optimization](/production/cost-optimization) — prompt caching and token management
