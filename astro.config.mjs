@@ -13,7 +13,7 @@ export default defineConfig({
 
   integrations: [
     mermaid({
-      theme: 'neutral',
+      theme: 'dark',
     }),
     mdx(),
   ]

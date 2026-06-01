@@ -8,24 +8,27 @@ const { type = 'info' } = Astro.props;
 const styles = {
   tip: {
     border: 'border-emerald-500',
-    bg: 'bg-emerald-50',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
     icon: '💡',
     title: 'Tip',
-    titleColor: 'text-emerald-800',
+    titleColor: 'text-emerald-800 dark:text-emerald-300',
+    textColor: 'text-gray-700 dark:text-gray-300',
   },
   warning: {
     border: 'border-amber-500',
-    bg: 'bg-amber-50',
+    bg: 'bg-amber-50 dark:bg-amber-950/40',
     icon: '⚠️',
     title: 'Warning',
-    titleColor: 'text-amber-800',
+    titleColor: 'text-amber-800 dark:text-amber-300',
+    textColor: 'text-gray-700 dark:text-gray-300',
   },
   info: {
     border: 'border-blue-500',
-    bg: 'bg-blue-50',
+    bg: 'bg-blue-50 dark:bg-blue-950/40',
     icon: 'ℹ️',
     title: 'Note',
-    titleColor: 'text-blue-800',
+    titleColor: 'text-blue-800 dark:text-blue-300',
+    textColor: 'text-gray-700 dark:text-gray-300',
   },
 };
 
@@ -36,7 +39,7 @@ const s = styles[type];
   <p class:list={['mb-1 text-sm font-semibold', s.titleColor]}>
     {s.icon} {s.title}
   </p>
-  <div class="text-sm text-gray-700">
+  <div class:list={['text-sm', s.textColor]}>
     <slot />
   </div>
 </aside>

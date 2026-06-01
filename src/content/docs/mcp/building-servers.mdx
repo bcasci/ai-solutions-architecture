@@ -1,0 +1,288 @@
+---
+title: "Building MCP Servers"
+description: "Build MCP servers in Python and TypeScript — tool design patterns, resources, error handling, testing, and deployment options."
+section: "mcp"
+order: 2
+tags: ["mcp", "tool-use", "tool-design", "typescript", "python"]
+lastVerified: "2026-06-01"
+---
+import Callout from '../../../components/Callout.astro';
+
+An MCP server wraps external functionality — databases, APIs, file systems — and exposes it to Claude through a standard protocol. This page covers server development in both Python and TypeScript, tool design patterns, and testing strategies.
+
+If you're new to how tools work at the protocol level, read [Tool Use](/the-api/tool-use) first. MCP builds on the same `tool_use`/`tool_result` mechanism — it just changes how tools are defined and discovered.
+
+## Python Server with FastMCP
+
+The Python SDK provides `FastMCP`, which turns decorated functions into MCP-compatible tools. Type hints become JSON schema automatically.
+
+```bash
+pip install mcp pydantic
+```
+
+```python
+from mcp.server.fastmcp import FastMCP
+from pydantic import Field
+
+mcp = FastMCP("InventoryService", log_level="ERROR")
+
+@mcp.tool(
+    name="check_stock",
+    description="Check inventory stock level for a product by SKU. Returns current quantity and reorder status."
+)
+def check_stock(
+    sku: str = Field(description="Product SKU, e.g. 'WIDGET-001'")
+) -> dict:
+    # Your database/API call here
+    inventory = {"WIDGET-001": 142, "GADGET-X": 7}
+    qty = inventory.get(sku)
+    if qty is None:
+        raise ValueError(f"Unknown SKU: {sku}")
+    return {"sku": sku, "quantity": qty, "low_stock": qty < 10}
+```
+
+Compare this to [direct tool definitions](/the-api/tool-use#defining-tools) where you write JSON schema by hand. MCP generates the schema from type hints — less boilerplate, same result at the protocol level.
+
+## TypeScript Server
+
+The TypeScript SDK (`@modelcontextprotocol/sdk`) uses a builder pattern instead of decorators.
+
+```bash
+npm install @modelcontextprotocol/sdk zod
+```
+
+```typescript
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+const server = new McpServer({
+  name: "InventoryService",
+  version: "1.0.0",
+});
+
+// Define a tool
+server.tool(
+  "check_stock",
+  "Check inventory stock level for a product by SKU. Returns current quantity and reorder status.",
+  {
+    sku: z.string().describe("Product SKU, e.g. 'WIDGET-001'"),
+  },
+  async ({ sku }) => {
+    const inventory: Record<string, number> = {
+      "WIDGET-001": 142,
+      "GADGET-X": 7,
+    };
+    const qty = inventory[sku];
+    if (qty === undefined) {
+      return {
+        content: [{ type: "text", text: `Unknown SKU: ${sku}` }],
+        isError: true,
+      };
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ sku, quantity: qty, lowStock: qty < 10 }),
+        },
+      ],
+    };
+  }
+);
+
+// Start the server
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+Zod schemas serve the same role as Pydantic `Field` annotations — they generate the JSON schema that Claude reads. The `describe()` method adds parameter descriptions.
+
+## Tool Design for MCP
+
+MCP tools follow the same design principles as [direct tool definitions](/the-api/tool-use#the-schema), with a few MCP-specific considerations:
+
+### Write descriptive tool metadata
+
+Claude discovers MCP tools at runtime via `list_tools()`. Unlike direct tools where you control the prompt context, MCP tools must be self-describing — Claude has no other information about what they do.
+
+```python
+# Bad — Claude won't know when to use this
+@mcp.tool(name="query", description="Query the database.")
+def query(q: str) -> str: ...
+
+# Good — Claude understands scope, inputs, and return value
+@mcp.tool(
+    name="query_orders",
+    description=(
+        "Search customer orders by date range and status. "
+        "Returns a list of order objects with id, customer, total, and status. "
+        "Use this when the user asks about orders, sales, or revenue for a time period."
+    )
+)
+def query_orders(
+    start_date: str = Field(description="Start date in YYYY-MM-DD format"),
+    end_date: str = Field(description="End date in YYYY-MM-DD format"),
+    status: str = Field(default="all", description="Filter by status: 'pending', 'shipped', 'delivered', or 'all'"),
+) -> list[dict]: ...
+```
+
+### Return structured errors
+
+When a tool call fails, return a clear error message — Claude reads it and can retry with corrected parameters or explain the issue to the user.
+
+```python
+@mcp.tool(name="get_user", description="Look up a user by email address.")
+def get_user(email: str = Field(description="User email address")) -> dict:
+    if "@" not in email:
+        raise ValueError(f"Invalid email format: '{email}'. Expected format: user@domain.com")
+    user = db.find_user(email)
+    if user is None:
+        raise ValueError(f"No user found with email '{email}'. Check spelling or try a different address.")
+    return user
+```
+
+In TypeScript, return error responses explicitly:
+
+```typescript
+server.tool("get_user", "Look up a user by email address.", {
+  email: z.string().describe("User email address"),
+}, async ({ email }) => {
+  if (!email.includes("@")) {
+    return {
+      content: [{ type: "text", text: `Invalid email format: '${email}'` }],
+      isError: true,
+    };
+  }
+  const user = await db.findUser(email);
+  if (!user) {
+    return {
+      content: [{ type: "text", text: `No user found with email '${email}'` }],
+      isError: true,
+    };
+  }
+  return {
+    content: [{ type: "text", text: JSON.stringify(user) }],
+  };
+});
+```
+
+<Callout type="tip">
+MCP errors reach Claude as tool results, just like [error handling in direct tool use](/the-api/tool-use#the-agentic-loop). The `is_error` / `isError` flag tells Claude the call failed, so it can adjust its approach.
+</Callout>
+
+### Keep tools focused
+
+One tool per action. If a tool does multiple things based on a `mode` or `action` parameter, split it into separate tools. Claude routes better to specific tools than to multi-purpose ones.
+
+```python
+# Bad — overloaded tool
+@mcp.tool(name="manage_user", description="Create, update, or delete a user.")
+def manage_user(action: str, ...) -> dict: ...
+
+# Good — separate tools with clear purposes
+@mcp.tool(name="create_user", description="Create a new user account.")
+def create_user(...) -> dict: ...
+
+@mcp.tool(name="update_user", description="Update an existing user's profile.")
+def update_user(...) -> dict: ...
+
+@mcp.tool(name="delete_user", description="Permanently delete a user account.")
+def delete_user(...) -> dict: ...
+```
+
+## Adding Resources
+
+Resources expose read-only data without requiring a tool call round-trip. They're ideal for context that Claude needs upfront.
+
+```python
+@mcp.resource("inventory://products", mime_type="application/json")
+def list_products() -> list[dict]:
+    """Returns all products with SKU, name, and category."""
+    return db.get_all_products()
+
+@mcp.resource("inventory://products/{sku}", mime_type="application/json")
+def get_product(sku: str) -> dict:
+    """Returns details for a specific product."""
+    product = db.get_product(sku)
+    if not product:
+        raise ValueError(f"Product {sku} not found")
+    return product
+```
+
+In TypeScript:
+
+```typescript
+server.resource("products-list", "inventory://products", async (uri) => ({
+  contents: [{
+    uri: uri.href,
+    mimeType: "application/json",
+    text: JSON.stringify(await db.getAllProducts()),
+  }],
+}));
+```
+
+Resources vs tools: use **resources** for data that Claude reads to understand context. Use **tools** for actions that change state or fetch data based on Claude's decisions.
+
+## Testing
+
+### MCP Inspector
+
+The SDK includes a browser-based inspector for testing servers without connecting to Claude:
+
+```bash
+# Python
+mcp dev my_server.py
+
+# TypeScript
+npx @modelcontextprotocol/inspector node my_server.js
+```
+
+The inspector lets you list tools, call them with test inputs, view resources, and render prompts — all in a browser UI on port 6277.
+
+### Automated testing
+
+Test tool functions directly — they're just functions:
+
+```python
+def test_check_stock_valid_sku():
+    result = check_stock("WIDGET-001")
+    assert result["sku"] == "WIDGET-001"
+    assert isinstance(result["quantity"], int)
+
+def test_check_stock_unknown_sku():
+    with pytest.raises(ValueError, match="Unknown SKU"):
+        check_stock("NONEXISTENT")
+```
+
+## Running the Server
+
+### stdio (default)
+
+Most common for same-machine setups. The client spawns the server as a subprocess:
+
+```python
+if __name__ == "__main__":
+    mcp.run()  # defaults to stdio transport
+```
+
+### HTTP with SSE
+
+For remote servers or multi-client setups:
+
+```python
+if __name__ == "__main__":
+    mcp.run(transport="sse", host="0.0.0.0", port=8080)
+```
+
+<Callout type="warning">
+HTTP/SSE transport exposes your server to the network. Add authentication before deploying remotely — MCP itself has no built-in auth layer.
+</Callout>
+
+## Related
+
+- [MCP Overview](/mcp/mcp) — architecture, when to use MCP vs direct tools
+- [MCP Client Integration](/mcp/client-integration) — connecting clients to servers
+- [Tool Use](/the-api/tool-use) — the underlying tool_use protocol that MCP builds on
+- [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)

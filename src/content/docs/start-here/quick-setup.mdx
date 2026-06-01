@@ -1,91 +1,132 @@
 ---
-title: "Quick Setup"
-description: "Get an API key, install the SDK, and make your first Claude API call in under 60 seconds."
+title: "The Platform"
+description: "What Claude offers — APIs, SDKs, Claude Code, and MCP — and how the pieces fit together for your integration."
 section: "start-here"
 order: 1
-tags: ["api-basics", "quickstart", "sdk"]
+tags: ["api-basics", "sdk", "overview", "claude-code", "mcp"]
 lastVerified: "2026-06-01"
 ---
-Go from zero to a working Claude API call in three steps. This page assumes you have Python 3.8+ or Node.js 18+ installed.
+import Callout from '../../../components/Callout.astro';
 
-## 1. Get an API Key
+Claude is a family of language models you interact with through several interfaces. Understanding which pieces exist — and when to reach for each — is the first step to building well.
 
-1. Go to [console.anthropic.com](https://console.anthropic.com/)
-2. Create an account or sign in
-3. Navigate to **API Keys** and create a new key
-4. Set it as an environment variable:
+## The Building Blocks
 
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."
-```
+| Layer | What it is | When to use it |
+| --- | --- | --- |
+| **Messages API** | HTTP API for sending messages and getting responses | Every custom integration — it's the foundation |
+| **Python / TypeScript SDKs** | Typed wrappers around the API | Any production app (handles auth, retries, types) |
+| **Claude Code** | Terminal-based coding assistant with built-in tools | Developer workflows, code generation, automation |
+| **MCP (Model Context Protocol)** | Standard for connecting Claude to external tools and data | Reusable tool servers, shared integrations, ecosystem |
 
-:::tip
-The SDK reads `ANTHROPIC_API_KEY` from the environment automatically. You never need to pass it in code.
-:::
+These aren't competing options — they compose. A typical production system uses the **SDK** to call the **Messages API**, with **MCP servers** providing tool access, and developers using **Claude Code** to build and iterate.
 
-## 2. Install the SDK
+## The Messages API
 
-**Python:**
-
-```bash
-pip install anthropic
-```
-
-**TypeScript:**
-
-```bash
-npm install @anthropic-ai/sdk
-```
-
-## 3. Make Your First Call
-
-**Python:**
+Every interaction with Claude goes through the [Messages API](/the-api/messages-api). You send a list of messages, Claude returns a response. The SDKs wrap this API — they don't replace it.
 
 ```python
 from anthropic import Anthropic
 
-client = Anthropic()
+client = Anthropic()  # reads ANTHROPIC_API_KEY from environment
 
 message = client.messages.create(
     model="claude-sonnet-4-20250514",
     max_tokens=256,
     messages=[
-        {"role": "user", "content": "What is the capital of France? One word."}
+        {"role": "user", "content": "Explain API rate limiting in one sentence."}
     ]
 )
 
 print(message.content[0].text)
 ```
 
-**TypeScript:**
-
 ```typescript
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic();
+const client = new Anthropic(); // reads ANTHROPIC_API_KEY from environment
 
 const message = await client.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 256,
     messages: [
-        { role: "user", content: "What is the capital of France? One word." }
+        { role: "user", content: "Explain API rate limiting in one sentence." }
     ],
 });
 
 console.log(message.content[0].text);
 ```
 
-That's it. You have a working integration.
+From this foundation, you add capabilities:
 
-## What's Next
+- **[System prompts](/prompting/system-prompts)** shape Claude's behavior and persona
+- **[Tool use](/the-api/tool-use)** lets Claude call functions in your code
+- **[Streaming](/the-api/streaming)** delivers responses token-by-token
+- **[Extended thinking](/prompting/extended-thinking)** gives Claude a reasoning scratchpad for complex problems
+- **[Structured output](/prompting/structured-output)** forces responses into JSON or other formats
 
-- Understand the full request/response structure: [Messages API](/the-api/messages-api)
-- Pick the right model for your use case: [Models & Parameters](/the-api/models-and-parameters)
-- Decide how to structure your integration: [Planning Your Build](/start-here/choosing-your-strategy)
+## Tool Use — The Key Capability
+
+The most powerful API feature is [tool use](/the-api/tool-use). You define functions Claude can call — database queries, API requests, calculations — and Claude decides when and how to use them. This is what makes Claude an active participant in your system rather than just a text generator.
+
+Tool use is the foundation for:
+- **[Agents](/agents/agent-architecture)** — autonomous loops where Claude plans and executes multi-step tasks
+- **[MCP](/mcp/mcp)** — standardized tool servers that work across projects and teams
+- **[Claude Code](/claude-code/basics)** — a coding assistant built on tool use (Read, Edit, Bash, etc.)
+
+## Claude Code
+
+[Claude Code](/claude-code/basics) is a terminal-based assistant that uses Claude with a fixed set of developer tools. It's not a separate API — it's an application built on the same Messages API and tool use protocol.
+
+What makes it relevant to this guide: Claude Code is extensible via [hooks](/claude-code/hooks) (shell commands triggered by events), [skills](/claude-code/skills) (reusable prompt templates), and [MCP servers](/mcp/client-integration#claude-code-as-mcp-client) (custom tools you connect).
+
+## MCP
+
+[MCP (Model Context Protocol)](/mcp/mcp) standardizes how Claude connects to external tools and data. Instead of defining tool schemas inline in your API calls, you run MCP servers that expose tools through a common protocol.
+
+MCP matters when you have tools that are shared across projects, used by multiple team members, or available from the [pre-built ecosystem](/mcp/client-integration#pre-built-servers) (GitHub, PostgreSQL, Slack, etc.).
+
+## Getting Set Up
+
+To follow the examples in this guide:
+
+1. **Get an API key** at [console.anthropic.com](https://console.anthropic.com/) → API Keys
+2. **Set it in your environment:**
+   ```bash
+   export ANTHROPIC_API_KEY="sk-ant-..."
+   ```
+3. **Install the SDK:**
+   ```bash
+   # Python
+   pip install anthropic
+
+   # TypeScript
+   npm install @anthropic-ai/sdk
+   ```
+
+<Callout type="tip">
+The SDKs read `ANTHROPIC_API_KEY` from the environment automatically. You never need to pass it in code.
+</Callout>
+
+## How This Guide Is Organized
+
+The sections build from simple to complex:
+
+1. **[The API](/the-api/messages-api)** — request mechanics, models, streaming, multimodal input, tool use
+2. **[Prompting](/prompting/system-prompts)** — system prompts, structured output, evaluation, extraction
+3. **[RAG](/retrieval/rag)** — giving Claude knowledge it doesn't have
+4. **[Agents](/agents/agent-architecture)** — orchestration patterns and autonomous systems
+5. **[Claude Code](/claude-code/basics)** — setup, hooks, and skills
+6. **[MCP](/mcp/mcp)** — building and connecting tool servers
+7. **[Production](/production/cost-optimization)** — cost, errors, rate limits, safety, monitoring
+8. **[Recipes](/recipes/summarize-document)** — copy-paste solutions for common tasks
+
+Each page is self-contained — start wherever is relevant to what you're building.
 
 ## Related
 
-- [Messages API](/the-api/messages-api)
+- [Planning Your Build](/start-here/choosing-your-strategy) — pick the right architecture for your use case
+- [Messages API](/the-api/messages-api) — deep dive into the core API
 - [Anthropic Console](https://console.anthropic.com/)
 - [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [Anthropic TypeScript SDK](https://github.com/anthropics/anthropic-sdk-typescript)

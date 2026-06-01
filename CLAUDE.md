@@ -9,7 +9,7 @@ Practical solutions guide for developers building with Anthropic's Claude. Stati
 ## Commands
 
 - `npm run dev` — dev server at localhost:4321
-- `npm run build` — production build to `./dist/` (33 pages, ~5s)
+- `npm run build` — production build to `./dist/` (35 pages, ~5s)
 - `npm run preview` — serve production build
 - `npm run test` — Playwright tests (auto-starts preview server)
 - `npm run check-links` — validate internal links
