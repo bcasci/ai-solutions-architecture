@@ -21,6 +21,7 @@ Practical solutions guide for developers building with Anthropic's Claude. Stati
 **Routing:** Single dynamic route `[...slug].astro` renders all content. The `doc.id` (e.g., `the-api/messages-api`) becomes the URL path. No explicit route definitions needed.
 
 **Section system:** Sections are defined by the `section` field in MDX frontmatter (Zod enum in `content.config.ts`). Section metadata (labels, order) is duplicated in three places that must stay in sync:
+
 - `src/components/Sidebar.astro` — sidebar navigation
 - `src/pages/index.astro` — homepage cards
 - `src/layouts/DocLayout.astro` — breadcrumb labels
@@ -28,11 +29,13 @@ Practical solutions guide for developers building with Anthropic's Claude. Stati
 **Sections (in order):** Start Here, The API, Prompting, RAG (Retrieval Augmented Generation), Agents, MCP, Production, Recipes, Reference.
 
 **Navigation layers in DocLayout:**
+
 - Breadcrumb — `Home / Section Label`
 - Section nav ("In this section") — sibling pages, current highlighted, hidden for single-page sections
 - Prev/Next — bottom of page, linear flow within section
 
 **MDX frontmatter schema:**
+
 ```yaml
 title: string (required)
 description: string (required)
