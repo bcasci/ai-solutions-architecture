@@ -27,9 +27,12 @@ Run this after content-evaluation scores a page, or after a batch of pages have 
 
 1. **Determine scope.** If a specific file is given, audit that file. If no file is given, audit all MDX files in `src/content/docs/`.
 2. **Read each file** and scan every prose line (skip code blocks, frontmatter, and import statements).
-3. **Flag issues** using the pattern categories below. Record the file path, line number, the problematic text, and the recommended fix (replacement or deletion).
-4. **Output the audit** in the format below.
-5. **Do NOT apply edits automatically.** Present the findings for review first. Edits are applied in a separate step after the user approves.
+3. **Two-pass scan:**
+   - **Pass 1 — Sentence-level:** Flag whole-sentence issues: redundant summaries, paragraphs that restate code, heading-first-sentence duplication.
+   - **Pass 2 — Intra-sentence:** Re-read each prose line looking for filler *within* otherwise-good sentences: unnecessary adjectives ("high-level", "simple", "complete"), padding phrases ("from scratch", "in isolation", "the growing ecosystem of"), and hedges that don't earn their place. These are easy to miss on the first pass because the sentence reads fine — but it reads *tighter* without them.
+4. **Flag issues** using the pattern categories below. Record the file path, line number, the problematic text, and the recommended fix (replacement or deletion).
+5. **Output the audit** in the format below.
+6. **Do NOT apply edits automatically.** Present the findings for review first. Edits are applied in a separate step after the user approves.
 
 ## Pattern Categories
 
@@ -48,6 +51,11 @@ Words that add length without meaning. Delete them.
 | "the fact that"                                     | "due to the fact that"    | "because"                            |
 | "it should be noted that"                           | —                         | Delete entire phrase                 |
 | "as mentioned earlier/above"                        | —                         | Delete or link directly              |
+| "from scratch"                                      | "build it from scratch"   | "build it" or "write custom code"    |
+| "high-level" (when not contrasting with low-level)  | "a high-level class"      | "a class"                            |
+| "in isolation"                                      | "test in isolation"       | "test locally" or just "test"        |
+| "the growing ecosystem of"                          | "the growing ecosystem of MCP servers" | "MCP servers"             |
+| "automatically" (when obvious from context)         | "passes it automatically" | "passes it"                          |
 
 ### Hedging (remove unless meaningful)
 
