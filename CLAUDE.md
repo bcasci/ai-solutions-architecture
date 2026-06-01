@@ -26,7 +26,7 @@ Practical solutions guide for developers building with Anthropic's Claude. Stati
 - `src/pages/index.astro` — homepage cards
 - `src/layouts/DocLayout.astro` — breadcrumb labels
 
-**Sections (in order):** Start Here, The API, Prompting, RAG (Retrieval Augmented Generation), Agents, MCP, Production, Recipes, Reference.
+**Sections (in order):** Start Here, The API, Prompting, RAG (Retrieval Augmented Generation), Agents, Claude Code, MCP, Production, Recipes, Reference.
 
 **Navigation layers in DocLayout:**
 
@@ -48,7 +48,7 @@ draft: boolean (default false) — drafts excluded from build
 
 ## Key Conventions
 
-- **Adding a section:** Update the Zod enum in `content.config.ts`, then add matching entries to Sidebar, index.astro, and DocLayout `sectionLabels`.
+- **Adding a section:** Update the Zod enum in `content.config.ts`, then add matching entries to Sidebar, index.astro, DocLayout `sectionLabels`, and `tests/site.spec.ts` EXPECTED_SECTIONS.
 - **Adding a page:** Create `src/content/docs/{section}/{slug}.mdx` with valid frontmatter. Routing, sidebar, and navigation are automatic.
 - **Mermaid diagrams:** Use standard ` ```mermaid ` fenced blocks in MDX. The `astro-mermaid` integration (neutral theme) renders them client-side. No MDX imports needed.
 - **Cross-links:** Use absolute paths like `[Tool Use](/the-api/tool-use)`. Tests verify internal links resolve.
