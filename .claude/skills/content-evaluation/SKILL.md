@@ -47,7 +47,7 @@ Does the page respect the reader's time?
 - **3** = Some unnecessary explanation or repetition
 - **1** = Walls of text, excessive hand-holding
 
-**Check:** Flag filler phrases ("as you can see", "it's worth noting", "let's take a look at"), redundant explanations, and paragraphs that could be lists.
+**Check:** Flag paragraph-level bloat: redundant explanations, text walls that should be lists, sections that repeat what code already shows. For line-level filler and noise patterns, defer to the `prose-audit` skill.
 
 ### 4. Actionability (1-5)
 Does the reader know what to DO after reading?
