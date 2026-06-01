@@ -1,41 +1,58 @@
 # Solutions Architecture
 
-## Bootstrap Instructions
+A static site built with [Astro](https://astro.build), [Tailwind CSS v4](https://tailwindcss.com), and [MDX](https://mdxjs.com).
 
-### Prerequisites
+## Prerequisites
 
-- Node.js 22.16.0 (see `.tool-versions`)
-- [asdf](https://asdf-vm.com/) or compatible version manager (e.g., mise)
+- **Node.js 22.16.0** — managed via `.tool-versions` (install with [asdf](https://asdf-vm.com/) or [mise](https://mise.jdx.dev/))
 
-### Setup
+## Getting Started
 
-1. Install the correct Node version:
-   ```bash
-   asdf install
-   ```
+```bash
+# Install the correct Node version
+asdf install
 
-2. Initialize the project:
-   ```bash
-   npm init -y
-   ```
+# Install dependencies
+npm install
 
-3. Install dependencies (once a package.json exists):
-   ```bash
-   npm install
-   ```
+# Start the dev server (http://localhost:4321)
+npm run dev
+```
 
-### Playwright MCP
+## Commands
+
+| Command           | Description                            |
+| :---------------- | :------------------------------------- |
+| `npm run dev`     | Start dev server at `localhost:4321`   |
+| `npm run build`   | Build production site to `./dist/`     |
+| `npm run preview` | Preview the production build locally   |
+
+## Project Structure
+
+```
+src/
+  layouts/        # Page layouts (BaseLayout.astro)
+  pages/          # File-based routing (.astro, .mdx)
+  styles/         # Global CSS (Tailwind imports)
+public/           # Static assets (favicon, images)
+astro.config.mjs  # Astro configuration
+```
+
+## Stack
+
+- **Astro** — static site generator, zero JS by default
+- **Tailwind CSS v4** — utility-first styling via Vite plugin
+- **@tailwindcss/typography** — `prose` classes for styled markdown content
+- **MDX** — write content in markdown, embed custom components where needed
+
+## Playwright MCP
 
 This project uses the [Playwright MCP server](https://github.com/anthropics/mcp-playwright) for browser automation within Claude Code.
 
-To install the Playwright MCP for this project:
-
 ```bash
+# Install the MCP server
 claude mcp add playwright npx @playwright/mcp@latest
-```
 
-Then install Playwright browsers:
-
-```bash
+# Install Playwright browsers
 npx playwright install
 ```
