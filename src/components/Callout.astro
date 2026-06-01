@@ -1,0 +1,42 @@
+---
+interface Props {
+  type?: 'tip' | 'warning' | 'info';
+}
+
+const { type = 'info' } = Astro.props;
+
+const styles = {
+  tip: {
+    border: 'border-emerald-500',
+    bg: 'bg-emerald-50',
+    icon: '💡',
+    title: 'Tip',
+    titleColor: 'text-emerald-800',
+  },
+  warning: {
+    border: 'border-amber-500',
+    bg: 'bg-amber-50',
+    icon: '⚠️',
+    title: 'Warning',
+    titleColor: 'text-amber-800',
+  },
+  info: {
+    border: 'border-blue-500',
+    bg: 'bg-blue-50',
+    icon: 'ℹ️',
+    title: 'Note',
+    titleColor: 'text-blue-800',
+  },
+};
+
+const s = styles[type];
+---
+
+<aside class:list={['not-prose my-6 rounded-lg border-l-4 p-4', s.border, s.bg]}>
+  <p class:list={['mb-1 text-sm font-semibold', s.titleColor]}>
+    {s.icon} {s.title}
+  </p>
+  <div class="text-sm text-gray-700">
+    <slot />
+  </div>
+</aside>

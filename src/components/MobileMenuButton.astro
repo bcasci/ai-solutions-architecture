@@ -1,0 +1,28 @@
+---
+---
+
+<button
+  id="mobile-menu-toggle"
+  class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-gray-950 text-white shadow-lg lg:hidden"
+  aria-label="Toggle navigation"
+>
+  <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path id="menu-icon" d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+</button>
+
+<script>
+  const toggle = document.getElementById('mobile-menu-toggle');
+  const sidebar = document.querySelector('.sidebar') as HTMLElement;
+
+  toggle?.addEventListener('click', () => {
+    sidebar?.classList.toggle('sidebar-open');
+  });
+
+  // Close sidebar when clicking a link (mobile)
+  sidebar?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      sidebar?.classList.remove('sidebar-open');
+    });
+  });
+</script>
