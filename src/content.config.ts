@@ -16,7 +16,7 @@ const docs = defineCollection({
       'claude-code',
       'mcp',
       'production',
-      'recipes',
+      'scenarios',
       'reference',
     ]),
     order: z.number(), // sort order within section

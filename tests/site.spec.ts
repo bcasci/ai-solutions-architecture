@@ -11,7 +11,7 @@ const EXPECTED_SECTIONS = [
   "Claude Code",
   "MCP",
   "Production",
-  "Recipes",
+  "Scenarios",
   "Reference",
 ];
 
