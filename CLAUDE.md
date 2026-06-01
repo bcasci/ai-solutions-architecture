@@ -50,9 +50,12 @@ draft: boolean (default false) — drafts excluded from build
 
 - **Adding a section:** Update the Zod enum in `content.config.ts`, then add matching entries to Sidebar, index.astro, DocLayout `sectionLabels`, and `tests/site.spec.ts` EXPECTED_SECTIONS.
 - **Adding a page:** Create `src/content/docs/{section}/{slug}.mdx` with valid frontmatter. Routing, sidebar, and navigation are automatic.
-- **Mermaid diagrams:** Use standard ` ```mermaid ` fenced blocks in MDX. The `astro-mermaid` integration (neutral theme) renders them client-side. No MDX imports needed.
+- **Mermaid diagrams:** Use standard ` ```mermaid ` fenced blocks in MDX. The `astro-mermaid` integration (`dark` theme) renders them client-side. No MDX imports needed.
 - **Cross-links:** Use absolute paths like `[Tool Use](/the-api/tool-use)`. Tests verify internal links resolve.
-- **Dark mode:** Via `prefers-color-scheme` in `src/styles/global.css`. All layout elements need both light and `dark:` variants.
+- **Dark mode:** Via `prefers-color-scheme` in `src/styles/global.css`. No manual toggle — follows OS preference. All UI components must have both light and `dark:` Tailwind variants. The Callout component uses `dark:bg-{color}-950/40` pattern for tinted dark backgrounds.
+- **Code blocks:** Shiki (github-dark theme) adds `data-language` attribute to `pre` elements. CSS `::before` shows language labels (PYTHON, TYPESCRIPT, etc.). Copy buttons are injected via script in DocLayout. Both are automatic — no per-page setup needed.
+- **Favicon:** `public/favicon.svg` is the primary icon. `public/favicon.ico` is the Safari fallback (multi-res 16/32/48). When updating the SVG, regenerate the ICO: `rsvg-convert -w 256 -h 256 favicon.svg -o /tmp/favicon-256.png` then generate 16/32/48px PNGs and combine with `magick` into a multi-resolution `.ico`.
+- **Sidebar divider:** Uses `border-gray-800/50` (not `border-gray-200`) to blend with the dark `bg-gray-950` sidebar.
 - **Tests expect preview server at localhost:4321.** Playwright config auto-starts it via `npm run preview`. Run `npm run build` first if testing manually.
 
 ## Environment
