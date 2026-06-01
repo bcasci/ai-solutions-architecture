@@ -10,6 +10,7 @@ export async function getStaticPaths() {
   }));
 }
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const { doc, allDocs } = Astro.props;
 const { Content } = await render(doc);
 
@@ -20,7 +21,7 @@ const siblings = allDocs
 
 const sectionPages = siblings.map((d) => ({
   title: d.data.title,
-  href: `/${d.id}`,
+  href: `${base}/${d.id}`,
   isCurrent: d.id === doc.id,
 }));
 
@@ -34,8 +35,8 @@ const nextPage = currentIndex < siblings.length - 1 ? siblings[currentIndex + 1]
   description={doc.data.description}
   section={doc.data.section}
   sectionPages={sectionPages}
-  prevPage={prevPage ? { title: prevPage.data.title, href: `/${prevPage.id}` } : null}
-  nextPage={nextPage ? { title: nextPage.data.title, href: `/${nextPage.id}` } : null}
+  prevPage={prevPage ? { title: prevPage.data.title, href: `${base}/${prevPage.id}` } : null}
+  nextPage={nextPage ? { title: nextPage.data.title, href: `${base}/${nextPage.id}` } : null}
 >
   <Content />
 </DocLayout>
