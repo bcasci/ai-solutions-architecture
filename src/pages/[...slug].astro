@@ -6,18 +6,30 @@ export async function getStaticPaths() {
   const docs = await getCollection('docs', ({ data }) => !data.draft);
   return docs.map((doc) => ({
     params: { slug: doc.id },
-    props: { doc },
+    props: { doc, allDocs: docs },
   }));
 }
 
-const { doc } = Astro.props;
-const { Content } = await render(doc);
+const { doc, allDocs } = Astro.props;
+const { Content, headings } = await render(doc);
+
+// Sibling pages in same section, sorted by order
+const siblings = allDocs
+  .filter((d) => d.data.section === doc.data.section)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const currentIndex = siblings.findIndex((d) => d.id === doc.id);
+const prevPage = currentIndex > 0 ? siblings[currentIndex - 1] : null;
+const nextPage = currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
 ---
 
 <DocLayout
   title={doc.data.title}
   description={doc.data.description}
   section={doc.data.section}
+  headings={headings}
+  prevPage={prevPage ? { title: prevPage.data.title, href: `/${prevPage.id}` } : null}
+  nextPage={nextPage ? { title: nextPage.data.title, href: `/${nextPage.id}` } : null}
 >
   <Content />
 </DocLayout>
