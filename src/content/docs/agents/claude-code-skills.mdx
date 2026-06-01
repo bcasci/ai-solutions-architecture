@@ -1,0 +1,304 @@
+---
+title: "Claude Code: Skills & SDK"
+description: "Author reusable skills with SKILL.md for on-demand Claude Code expertise, build multi-file skill packages, and drive Claude Code programmatically with the Agent SDK."
+section: "agents"
+order: 5
+tags: ["claude-code", "skills-authoring", "agent-sdk", "agents"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Skills are folders of instructions that Claude Code discovers and loads on demand. Unlike CLAUDE.md (always loaded) or slash commands (manually invoked), skills activate automatically when Claude recognizes your request matches a skill's description. The Agent SDK lets you run the same Claude Code agent loop from TypeScript or Python scripts, enabling batch automation and CI/CD integration.
+
+## Skills vs. Other Customization
+
+Claude Code has five customization mechanisms. Choosing the right one matters:
+
+| Mechanism | Loading | Scope | Best For |
+| --- | --- | --- | --- |
+| `CLAUDE.md` | Every conversation | Project-wide standards | Build commands, coding style, architecture notes |
+| Skills | On demand (semantic match) | Task-specific expertise | PR reviews, onboarding, audits, specialized procedures |
+| Slash commands | Explicit invocation (`/cmd`) | Repeatable tasks | Test generation, dependency audits, deploy steps |
+| [Hooks](/agents/claude-code-hooks) | Event-driven (tool calls) | Automation | Formatting, testing, access control |
+| [MCP servers](/agents/mcp) | Always available | External integrations | Databases, browsers, APIs |
+
+If you find yourself explaining the same thing to Claude repeatedly, that's a skill waiting to be written. If it should apply to every conversation, put it in CLAUDE.md instead.
+
+## Creating a Skill
+
+A skill is a directory containing a `SKILL.md` file with YAML frontmatter and instructions below it.
+
+```bash
+# Create a personal skill (follows you across all projects)
+mkdir -p ~/.claude/skills/pr-description
+```
+
+```markdown
+---
+name: pr-description
+description: Writes pull request descriptions. Use when creating a PR, writing a PR, or when the user asks to summarize changes for a pull request.
+---
+
+When writing a PR description:
+
+1. Run `git diff main...HEAD` to see all changes on this branch
+2. Write a description following this format:
+
+## What
+One sentence explaining what this PR does.
+
+## Why
+Brief context on why this change is needed.
+
+## Changes
+- Bullet points of specific changes made
+- Group related changes together
+- Mention any files deleted or renamed
+```
+
+The directory name must match the `name` field. Save the file as `SKILL.md` (case-sensitive: "SKILL" all caps, "md" lowercase).
+
+### How Matching Works
+
+Claude loads only skill names and descriptions at startup — no context window cost until activation. When you send a message, Claude compares it against all available descriptions via semantic matching. If a match is found, Claude prompts you to confirm before loading the full skill content.
+
+The `description` field is the most important part. Write it to enumerate concrete trigger phrases that match how you actually phrase requests:
+
+```yaml
+# Weak — too vague for reliable matching
+description: Reviews code quality.
+
+# Strong — specific trigger phrases
+description: Reviews pull requests for code quality, security issues, and test coverage. Use when reviewing PRs, checking code changes, or auditing a branch before merge.
+```
+
+### Storage Locations
+
+| Location | Type | Shared? |
+| --- | --- | --- |
+| `~/.claude/skills/` | Personal | No — follows you across projects |
+| `.claude/skills/` | Project | Yes — committed to git, shared with team |
+| Enterprise managed | Organization | Yes — deployed by admin, highest priority |
+| Plugins | Community | Yes — installed from marketplaces |
+
+**Priority order for name conflicts:** Enterprise > Personal > Project > Plugins.
+
+:::tip
+Use personal skills for individual preferences (commit message style, documentation format). Use project skills for team standards (coding conventions, review checklists, framework patterns).
+:::
+
+## Frontmatter Reference
+
+The agent skills open standard supports four frontmatter fields:
+
+```yaml
+---
+name: codebase-onboarding
+description: Helps new developers understand how the system works. Use when onboarding, exploring architecture, or asking how components connect.
+allowed-tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+```
+
+| Field | Required | Constraints | Purpose |
+| --- | --- | --- | --- |
+| `name` | Yes | Lowercase, numbers, hyphens. Max 64 chars. Must match directory name. | Identifier |
+| `description` | Yes | Max 1,024 chars | Semantic matching and activation criteria |
+| `allowed-tools` | No | Comma-separated tool names | Restricts tools when skill is active (omit for no restrictions) |
+| `model` | No | Claude model name | Pins skill to a specific model |
+
+Use `allowed-tools` to enforce guardrails: a read-only onboarding skill should list `Read, Grep, Glob, Bash` and nothing else.
+
+## Multi-File Skills
+
+Keep `SKILL.md` under 500 lines. Put detailed reference material in separate files that Claude reads only when needed — progressive disclosure.
+
+```
+.claude/skills/deploy-checklist/
+  SKILL.md              # Core instructions (< 500 lines)
+  scripts/
+    validate-env.sh     # Executable scripts
+  references/
+    rollback-guide.md   # Loaded only when relevant
+  assets/
+    checklist.json       # Templates, data files
+```
+
+In SKILL.md, reference these files with conditional loading instructions:
+
+```markdown
+## References
+
+- Read `references/rollback-guide.md` only when the user asks about rollbacks or recovery
+- Run `scripts/validate-env.sh` to check environment prerequisites before deploying
+```
+
+:::warning
+Tell Claude to **run** scripts, not **read** them. Running a script only puts its output in context (small). Reading a script puts the entire source in context (wasteful).
+:::
+
+## Custom Slash Commands
+
+Slash commands are a simpler alternative to skills — explicit invocation via `/command-name` instead of automatic matching. Define them as markdown files in `.claude/commands/`:
+
+```markdown
+<!-- .claude/commands/write-tests.md -->
+---
+allowed-tools: Read, Write, Bash, Grep, Glob
+description: Generate comprehensive tests for a file or module
+---
+
+Write comprehensive tests for: $ARGUMENTS
+
+Testing conventions:
+* Use Vitest with React Testing Library
+* Place test files in a __tests__ directory alongside source
+* Name test files as [filename].test.ts(x)
+
+Coverage:
+* Test happy paths, edge cases, and error states
+```
+
+```bash
+# Invoke with arguments
+> /write-tests the auth middleware in src/api/middleware.ts
+```
+
+The `$ARGUMENTS` placeholder captures everything after the command name. Commands are picked up automatically — no restart required.
+
+**When to use commands vs. skills:**
+- Use **commands** when the user should decide when to invoke the procedure
+- Use **skills** when Claude should recognize the situation and offer the procedure automatically
+
+## Sharing Skills
+
+**Within a team:** Commit `.claude/skills/` to your repository. Anyone who clones the repo gets the skills automatically.
+
+**Across repositories:** Package skills as plugins with a `skills/` directory following the same structure. Plugins can be published to marketplaces.
+
+**Enterprise-wide:** Use managed settings to deploy mandatory skills at the highest priority level. The `strictKnownMarketplaces` setting restricts which plugin sources are approved:
+
+```json
+{
+  "strictKnownMarketplaces": [
+    { "source": "github", "repo": "acme-corp/approved-plugins" },
+    { "source": "npm", "package": "@acme-corp/compliance-plugins" }
+  ]
+}
+```
+
+### Skills in Subagents
+
+Subagents start with a fresh context — they do not inherit skills from the parent conversation. To use skills in a custom subagent, list them explicitly in the agent's frontmatter:
+
+```yaml
+---
+name: frontend-reviewer
+description: Reviews frontend code for accessibility and performance
+tools: Bash, Glob, Grep, Read, WebFetch, Skill
+model: sonnet
+skills: accessibility-audit, performance-check
+---
+```
+
+Note that `Skill` must appear in the `tools` list to enable skill usage. Built-in agents (Explorer, Plan, Verify) cannot use skills.
+
+## The Claude Code Agent SDK
+
+The Agent SDK (`@anthropic-ai/claude-agent-sdk`) runs Claude Code's agent loop programmatically. Same tools, same file access, same hooks — under your script's control.
+
+### TypeScript
+
+```bash
+npm install @anthropic-ai/claude-agent-sdk
+```
+
+```typescript
+// index.mjs
+import { query } from "@anthropic-ai/claude-agent-sdk";
+
+const prompt = "List all TODO comments in the src/ directory";
+
+for await (const message of query({ prompt })) {
+  if (message.type === "assistant") {
+    console.log(message.message);
+  }
+}
+```
+
+Restrict tools with `allowedTools` — principle of least privilege:
+
+```typescript
+for await (const message of query({
+  prompt: "Analyze the test coverage in src/",
+  options: { allowedTools: ["Read", "Glob", "Grep"] },
+})) {
+  // Read-only analysis — no file writes possible
+}
+```
+
+### Python
+
+```bash
+pip install claude-agent-sdk
+```
+
+```python
+from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ToolUseBlock
+import asyncio
+
+
+async def analyze_codebase():
+    options = ClaudeAgentOptions(
+        allowed_tools=["Read", "Grep", "Glob"],
+        permission_mode="acceptEdits",
+        cwd="/home/user/project",
+    )
+
+    async for message in query(
+        prompt="Find all functions without docstrings in src/", options=options
+    ):
+        if isinstance(message, AssistantMessage):
+            for block in message.content:
+                if isinstance(block, ToolUseBlock):
+                    print(f"Using tool: {block.name}")
+
+
+asyncio.run(analyze_codebase())
+```
+
+The SDK returns an async iterable of messages — the same conversation events as the CLI (tool calls, tool results, assistant text). Process them progressively rather than waiting for completion.
+
+:::warning
+The package name is `@anthropic-ai/claude-agent-sdk` (TypeScript) or `claude-agent-sdk` (Python). The CLI package `@anthropic-ai/claude-code` cannot be imported as a library — it is not the SDK.
+:::
+
+### SDK Use Cases
+
+- **Batch processing:** Run Claude against every file in a directory
+- **CI/CD pipelines:** Automated code review, test generation, documentation updates
+- **Hooks:** The AI-reviews-AI pattern in [hooks](/agents/claude-code-hooks) uses the SDK to launch a second Claude instance
+- **Custom tooling:** Build internal developer tools powered by Claude Code's agent loop
+
+## Troubleshooting Skills
+
+| Problem | Likely Cause | Fix |
+| --- | --- | --- |
+| Skill doesn't trigger | Description lacks semantic overlap with your phrasing | Add trigger keywords that match how you actually ask |
+| Skill doesn't load | `SKILL.md` not inside a named directory, or wrong case | Must be `skills/skill-name/SKILL.md` exactly |
+| Wrong skill activates | Descriptions too similar between skills | Make descriptions more distinct |
+| Skill shadowed | Higher-priority skill has the same name | Rename, or check with admin for enterprise conflicts |
+| Runtime error | Missing deps, no execute permission, wrong path separators | `chmod +x` scripts, use forward slashes everywhere |
+
+Run `claude --debug` to see skill loading errors. The agent skills verifier tool (installable via `uv`) catches structural problems before debugging.
+
+## Related
+
+- [Claude Code: Basics & Context](/agents/claude-code-basics) — setup, CLAUDE.md, and session workflows
+- [Claude Code: Hooks & Automation](/agents/claude-code-hooks) — event-driven automation and CI/CD
+- [Agent Architecture](/agents/agent-architecture) — how agent loops work
+- [Multi-Agent Systems](/agents/multi-agent-systems) — subagent patterns and coordination
+- [Tool Use](/patterns/tool-use) — the tool use pattern underlying skills and the SDK
+- [Anthropic Claude Code skills docs](https://docs.anthropic.com/en/docs/claude-code/skills) — official reference
+- [Agent skills open standard](https://agentskills.io) — the SKILL.md specification

@@ -1,0 +1,174 @@
+---
+title: "Claude Code: Basics & Context"
+description: "Set up Claude Code, manage context with CLAUDE.md, and use proven workflows to get better results from your terminal-based coding assistant."
+section: "agents"
+order: 3
+tags: ["claude-code", "context-management", "agents"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Claude Code is a terminal-based coding assistant that uses Claude's tool use capabilities to read files, run commands, edit code, and search the web — all from your command line. This page covers installation, context management, and the workflows that separate productive sessions from frustrating ones.
+
+## What Claude Code Actually Is
+
+A coding assistant wraps a language model with tools. Claude alone can only process and return text — it cannot read your files or run your tests. Claude Code bridges that gap by giving Claude access to tools like `Read`, `Write`, `Edit`, `Bash`, `Glob`, and `Grep`. When you ask Claude Code to fix a bug, Claude decides which tools to call, Claude Code executes them, and the results feed back into the conversation.
+
+This architecture means Claude Code handles arbitrary programming tasks with a small set of abstract tools rather than purpose-built features. The same `Bash` tool that runs your tests also installs dependencies and starts dev servers.
+
+## Setup
+
+Claude Code runs on macOS, Windows (WSL), and Linux. You need Node.js installed.
+
+```bash
+# Verify Node.js is available
+npm help
+
+# Install Claude Code globally
+npm install -g @anthropic-ai/claude-code
+
+# Start Claude Code (first run prompts for Anthropic account login)
+claude
+```
+
+On first launch, Claude Code prompts you to authenticate with your Anthropic account. After that, you're dropped into an interactive session in your terminal.
+
+:::tip
+Run `claude` from your project's root directory. Claude Code uses the working directory as its starting point for file operations.
+:::
+
+## Context Management with CLAUDE.md
+
+Context is the single biggest lever for Claude Code quality. Too little context and Claude guesses wrong. Too much irrelevant context and Claude gets confused. `CLAUDE.md` files solve this by providing persistent project knowledge across sessions.
+
+### The /init Command
+
+Run `/init` inside Claude Code to scan your codebase and generate a `CLAUDE.md` file automatically. It captures project purpose, architecture, key commands, and coding patterns.
+
+```bash
+# Inside a Claude Code session
+> /init
+```
+
+Claude Code walks through the generated file and asks you to approve each section. Press `Enter` to approve, or `Shift+Tab` to grant free file-write access for the session.
+
+### Three Scopes of CLAUDE.md
+
+| File | Scope | Shared? | Use For |
+| --- | --- | --- | --- |
+| `CLAUDE.md` (project root) | Project | Yes (committed to git) | Build commands, coding guidelines, architecture notes |
+| `CLAUDE.local.md` | Project, personal | No (gitignored) | Personal preferences, local paths, API keys references |
+| `~/.claude/CLAUDE.md` | All projects | No | Cross-project conventions (naming, style preferences) |
+
+All three are loaded into every conversation, so keep them focused. Task-specific procedures belong in [skills](/agents/claude-code-skills), not CLAUDE.md.
+
+### File References with @
+
+The `@` syntax includes file contents in your prompt or in CLAUDE.md itself:
+
+```bash
+# In a prompt — include a specific file as context
+> How does the auth system work? @src/auth/middleware.ts
+
+# In CLAUDE.md — auto-include a file in every conversation
+# Place this line in your CLAUDE.md:
+The database schema is defined in @prisma/schema.prisma — reference it when working with data models.
+```
+
+If your repo already has an `AGENTS.md` for another tool, add `@AGENTS.md` on the first line of your `CLAUDE.md` to import it without duplicating instructions.
+
+### Updating Context
+
+Use the `/memory` command inside Claude Code to add or update instructions in CLAUDE.md. You can also edit the file directly — Claude Code picks up changes on the next message.
+
+```bash
+# Inside Claude Code
+> /memory
+# Opens an editor to add project instructions
+```
+
+:::warning
+The `#` shortcut for adding memories shown in older videos and tutorials has been removed. Use `/memory` or edit CLAUDE.md directly.
+:::
+
+## Effective Usage Patterns
+
+### The Three-Phase Workflow
+
+For non-trivial tasks, this sequence consistently produces better results than a single prompt:
+
+1. **Feed context** — Ask Claude to read the relevant files first
+2. **Plan** — Ask Claude to plan the implementation (explicitly say "don't write code yet")
+3. **Implement** — Ask Claude to execute the plan
+
+```bash
+# Phase 1: Feed context
+> Read the src/api/routes.ts and src/api/middleware.ts files
+
+# Phase 2: Plan (no code yet)
+> Plan how to add rate limiting to the /api/upload endpoint.
+> Consider the existing middleware pattern. Don't write code yet.
+
+# Phase 3: Implement
+> Implement the plan
+```
+
+Skipping the planning step leads to worse implementations, especially for multi-file changes.
+
+### Test-Driven Workflow
+
+For high-confidence changes, let tests drive the implementation:
+
+1. Feed context (relevant files)
+2. Ask Claude to brainstorm test cases
+3. Have Claude implement the tests you approve
+4. Ask Claude to write code that passes the tests
+
+This works because Claude has clear success criteria before writing any production code.
+
+### Planning Mode and Effort
+
+Claude Code offers two controls for complex work:
+
+- **Planning Mode** (`/plan` or `Shift+Tab` twice) — Claude reads more files, creates a detailed plan, and waits for your approval. Use for broad, multi-file changes. Press `Ctrl+G` to edit the plan before approving.
+- **Effort level** (`/effort`) — Controls reasoning depth. Set to `max` for hard algorithmic problems. Use `ultrathink` in a single prompt for one-off deep reasoning without changing the session default.
+
+```bash
+# Set effort for the session
+> /effort max
+
+# Or use ultrathink for a single prompt
+> ultrathink — Why is this recursive function hitting a stack overflow with input > 10000?
+```
+
+Both consume additional tokens. Use Planning Mode for breadth (understanding many files), effort level for depth (hard logic).
+
+## Controlling Your Session
+
+| Command | What It Does | When to Use |
+| --- | --- | --- |
+| `Escape` | Stops Claude mid-response | Claude is heading in the wrong direction |
+| `Escape` + `/memory` | Stop and add a persistent note | Claude keeps making the same mistake |
+| `/rewind` | Jump back to an earlier message | Remove noisy debugging context |
+| `/compact` | Summarize conversation, keep knowledge | Long conversation, moving to a related task |
+| `/clear` | Fresh conversation (use `/resume` to return) | Switching to an unrelated task |
+
+The `Escape` + `/memory` pattern is especially valuable: when Claude makes a repetitive error, stop it, add the correction to CLAUDE.md, and the fix persists across all future sessions.
+
+:::tip
+Stale context from debugging detours actively misleads Claude on subsequent tasks. Use `/rewind` to trim noise while keeping useful project context.
+:::
+
+## Pasting Screenshots
+
+Paste screenshots into Claude Code with `Ctrl+V` (not `Cmd+V` on macOS) to communicate about UI elements, error messages, or design references.
+
+## Related
+
+- [Claude Code: Hooks & Automation](/agents/claude-code-hooks) — automate formatting, testing, and safety checks
+- [Claude Code: Skills & SDK](/agents/claude-code-skills) — build reusable, on-demand instructions and drive Claude Code programmatically
+- [Agent Architecture](/agents/agent-architecture) — how Claude Code's agent loop works under the hood
+- [MCP](/agents/mcp) — extend Claude Code with external tool servers
+- [Tool Use](/patterns/tool-use) — the tool use pattern that powers Claude Code
+- [Anthropic Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) — official reference

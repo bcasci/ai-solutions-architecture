@@ -1,0 +1,258 @@
+---
+title: "Agent Architecture"
+description: "Workflows vs true agents, orchestration patterns, agentic loops, and tool integration — pick the right architecture for your Claude application."
+section: "agents"
+order: 1
+tags: ["agents", "orchestration", "agent-loops", "tool-use", "parallelization"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Most tasks that feel like they need an "agent" actually need a workflow. This page covers both approaches — structured orchestration patterns (chaining, parallelization, routing) and true agentic loops — so you can pick the right one and avoid over-engineering.
+
+## Workflows vs Agents
+
+Two strategies exist for tasks that require multiple Claude calls:
+
+| | Workflows | Agents |
+| --- | --- | --- |
+| **Definition** | Predefined series of Claude calls with known steps | Claude gets tools and a goal, decides its own plan |
+| **When to use** | You can picture the exact steps | Task parameters are unknown ahead of time |
+| **Strengths** | Higher accuracy, predictable, easier to test | Flexible, handles novel situations |
+| **Weaknesses** | Less flexible, more upfront design | Lower completion rate, harder to evaluate |
+
+**Default to workflows for production applications.** Reliability and predictability matter more to users than architectural elegance. Only reach for agents when requirements genuinely cannot be predetermined.
+
+## Orchestration Patterns
+
+Three workflow patterns cover most multi-call use cases. Each is a "repeatable recipe" — identifying the pattern doesn't implement it; you still write code.
+
+### Chaining
+
+Break a complex task into sequential sub-tasks. Each step has a focused prompt and builds on the previous step's output.
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+def chain(steps: list[dict], initial_input: str) -> str:
+    """Run a sequence of Claude calls, piping output to the next step."""
+    current_input = initial_input
+    for step in steps:
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            system=step["system"],
+            messages=[{"role": "user", "content": current_input}],
+        )
+        current_input = response.content[0].text
+    return current_input
+
+# Example: draft then revise
+result = chain(
+    steps=[
+        {"system": "Write a concise product description for the given product."},
+        {"system": "Revise the text below. Remove any AI self-references and all emojis. Return only the revised text."},
+    ],
+    initial_input="A wireless ergonomic keyboard with backlit keys and 3-device Bluetooth switching",
+)
+print(result)
+```
+
+Chaining solves the **long-prompt problem**: when a single prompt includes many constraints, Claude will often violate some of them. A two-step chain — generate first, then fix violations — consistently outperforms a single complex prompt.
+
+You can also insert non-LLM processing between steps (API calls, rendering, database writes).
+
+### Parallelization
+
+Split a task into independent sub-tasks, run them simultaneously, then aggregate results.
+
+```python
+import asyncio
+import anthropic
+
+aclient = anthropic.AsyncAnthropic()
+
+async def evaluate_parallel(content: str, criteria: list[dict]) -> list[dict]:
+    """Evaluate content against multiple criteria in parallel."""
+    async def evaluate_one(criterion: dict) -> dict:
+        response = await aclient.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=512,
+            system=criterion["system"],
+            messages=[{"role": "user", "content": content}],
+        )
+        return {"criterion": criterion["name"], "result": response.content[0].text}
+
+    return await asyncio.gather(*[evaluate_one(c) for c in criteria])
+
+# Example: evaluate a support ticket on three dimensions
+results = asyncio.run(evaluate_parallel(
+    content="Customer reports intermittent 503 errors on the /api/orders endpoint since yesterday's deploy.",
+    criteria=[
+        {"name": "severity", "system": "Rate the severity of this support ticket from 1-5. Reply with the number and a one-sentence justification."},
+        {"name": "category", "system": "Classify this ticket into exactly one category: billing, bug, feature-request, or account. Reply with the category only."},
+        {"name": "sentiment", "system": "Rate the customer sentiment as positive, neutral, or negative. Reply with the rating and a one-sentence justification."},
+    ],
+))
+for r in results:
+    print(f"{r['criterion']}: {r['result']}")
+```
+
+Each parallel branch gets focused context and can be optimized independently. Adding a new evaluation criterion means adding one branch — no changes to existing ones.
+
+### Routing
+
+Classify incoming input, then dispatch to a specialized pipeline.
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+ROUTE_HANDLERS = {
+    "billing": "You are a billing specialist. Help the customer with their billing question. Be precise about amounts and dates.",
+    "technical": "You are a technical support engineer. Diagnose the issue and provide step-by-step resolution.",
+    "account": "You are an account manager. Help with account changes, cancellations, and upgrades.",
+}
+
+def route_and_handle(user_message: str) -> str:
+    # Step 1: classify
+    classification = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=20,
+        system="Classify the user message into exactly one category: billing, technical, or account. Reply with only the category name.",
+        messages=[{"role": "user", "content": user_message}],
+    )
+    category = classification.content[0].text.strip().lower()
+
+    # Step 2: route to specialist
+    handler_system = ROUTE_HANDLERS.get(category, ROUTE_HANDLERS["technical"])
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        system=handler_system,
+        messages=[{"role": "user", "content": user_message}],
+    )
+    return response.content[0].text
+
+print(route_and_handle("I was charged twice for my subscription this month"))
+```
+
+Each route gets a prompt optimized for that category — significantly better quality than one generic prompt handling everything.
+
+:::tip
+You can combine these patterns. A routing step can dispatch to a chain, which itself uses parallelization internally. Start simple and compose as needed.
+:::
+
+## The Agentic Loop
+
+When you genuinely need an agent — the task is open-ended and you cannot predefine steps — the core pattern is a loop: send a message with tools, check if Claude wants to call a tool, execute it, feed the result back, repeat until Claude stops requesting tools.
+
+```python
+import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+tools = [
+    {
+        "name": "get_weather",
+        "description": "Get the current weather for a city.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string", "description": "City name"}
+            },
+            "required": ["city"],
+        },
+    }
+]
+
+def execute_tool(name: str, input: dict) -> str:
+    """Stub — replace with real implementations."""
+    if name == "get_weather":
+        return json.dumps({"temp_f": 72, "condition": "sunny", "city": input["city"]})
+    return json.dumps({"error": f"Unknown tool: {name}"})
+
+def run_agent(user_message: str) -> str:
+    messages = [{"role": "user", "content": user_message}]
+
+    while True:
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            tools=tools,
+            messages=messages,
+        )
+
+        # If Claude is done, return the text
+        if response.stop_reason == "end_turn":
+            return "".join(b.text for b in response.content if b.type == "text")
+
+        # Process tool calls
+        messages.append({"role": "assistant", "content": response.content})
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                result = execute_tool(block.name, block.input)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result,
+                })
+        messages.append({"role": "user", "content": tool_results})
+
+print(run_agent("What's the weather in Portland?"))
+```
+
+The loop terminates when `stop_reason` is `"end_turn"` — Claude has finished and is returning a final response. When `stop_reason` is `"tool_use"`, Claude wants to call one or more tools before continuing.
+
+:::warning
+Always set a maximum iteration limit on agentic loops. A runaway loop burns tokens and money. Add a counter and bail out with an error message after a reasonable number of iterations (10-30 depending on the task).
+:::
+
+## Tool Design for Agents
+
+The power of agents comes from Claude's ability to combine simple tools in unexpected ways. The key principle: **tools should be abstract, not hyper-specialized.**
+
+Claude Code demonstrates this perfectly. Its tool set is `bash`, `read`, `write`, `edit`, `glob`, `grep` — not "refactor code" or "install dependencies." These generic tools let Claude handle scenarios the developers never explicitly planned for.
+
+When designing tools for your agent:
+
+- **Keep tools generic and composable.** A `run_sql_query` tool is more powerful than separate `get_user`, `update_user`, `delete_user` tools.
+- **Write descriptive tool descriptions.** The description is Claude's only interface for understanding what a tool does and when to use it.
+- **Return errors as values, not exceptions.** Claude can read and react to descriptive error messages — `"Doc with id report.pdf not found"` helps it recover.
+
+## Environment Inspection
+
+Agents operate blind without feedback. After every significant action, provide a way for Claude to observe the result.
+
+- **Read before write.** Claude must understand current state before modifying it.
+- **Action-then-observe loop.** After a click, take a screenshot. After a file write, read it back. After an API call, check the response.
+- **Build inspection into system prompts.** For complex agent tasks, explicitly instruct Claude to verify its work: _"After generating the video, use FFmpeg to extract screenshots at regular intervals and visually inspect the output."_
+
+The design question for every agent tool: **"How will Claude know if this action worked?"**
+
+## Quick Reference
+
+| Pattern | Use When | Complexity | Reliability |
+| --- | --- | --- | --- |
+| Single prompt | Task fits one call | Low | High |
+| Chaining | Sequential steps with dependencies | Medium | High |
+| Parallelization | Independent evaluations or criteria | Medium | High |
+| Routing | Input types need different handling | Medium | High |
+| Evaluator-optimizer | Output needs iterative refinement | Medium-High | High |
+| Agentic loop | Open-ended, unpredictable tasks | High | Variable |
+
+## Related
+
+- [Tool Use](/patterns/tool-use) — the mechanics of defining and calling tools
+- [Classification and Routing](/patterns/classification-and-routing) — deeper dive on classification patterns
+- [MCP (Model Context Protocol)](/agents/mcp) — standardized tool distribution via MCP servers
+- [Multi-Agent Systems](/agents/multi-agent-systems) — coordinating multiple agents
+- [Cost Optimization](/production/cost-optimization) — managing costs in multi-call architectures
+- [Anthropic docs: Building effective agents](https://docs.anthropic.com/en/docs/build-with-claude/agentic-systems)
+- [Anthropic docs: Tool use](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview)
