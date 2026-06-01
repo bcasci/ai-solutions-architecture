@@ -6,7 +6,7 @@ const EXPECTED_SECTIONS = [
   "Start Here",
   "The API",
   "Prompting",
-  "Retrieval",
+  "RAG (Retrieval Augmented Generation)",
   "Agents",
   "MCP",
   "Production",
@@ -31,7 +31,7 @@ test.describe("Sidebar", () => {
       const href = await link.getAttribute("href");
       if (href && href !== "/") hrefs.push(href);
     }
-    expect(hrefs.length).toBeGreaterThan(25);
+    expect(hrefs.length).toBeGreaterThan(27);
 
     for (const href of hrefs) {
       const res = await page.request.get(`${BASE}${href}`);

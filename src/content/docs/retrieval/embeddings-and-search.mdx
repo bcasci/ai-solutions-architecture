@@ -1,0 +1,162 @@
+---
+title: "Embeddings & Vector Search"
+description: "Convert text to embeddings, store them in vector databases, and combine semantic and lexical search for production-quality retrieval."
+section: "retrieval"
+order: 3
+tags: ["rag", "embeddings", "vector-search", "bm25", "hybrid-search"]
+lastVerified: "2026-06-01"
+---
+After chunking documents, you need to make them searchable. Embeddings convert text into numerical vectors that capture semantic meaning — similar concepts land near each other in vector space. This page covers embedding models, vector storage, lexical search, and how to combine them.
+
+## Generating Embeddings
+
+Anthropic does not provide an embeddings API. Use a third-party provider:
+
+```python
+import voyageai
+from dotenv import load_dotenv
+
+load_dotenv()  # reads VOYAGE_API_KEY from .env
+
+voyage_client = voyageai.Client()
+
+def generate_embeddings(
+    texts: str | list[str],
+    model: str = "voyage-3-large",
+    input_type: str = "document",
+) -> list[list[float]]:
+    if isinstance(texts, str):
+        texts = [texts]
+    result = voyage_client.embed(texts, model=model, input_type=input_type)
+    return result.embeddings
+```
+
+Set `input_type="document"` when embedding chunks, and `input_type="query"` when embedding user questions. This asymmetry improves retrieval accuracy.
+
+:::warning
+Switching embedding models requires re-embedding all your chunks. Different models produce vectors of different dimensions that are not compatible with each other.
+:::
+
+### Embedding Providers
+
+| Provider | Model | Dimensions | Notes |
+| --- | --- | --- | --- |
+| [VoyageAI](https://docs.voyageai.com/) | `voyage-3-large` | 1024 | Anthropic-recommended, optimized for retrieval |
+| [OpenAI](https://platform.openai.com/docs/guides/embeddings) | `text-embedding-3-large` | 3072 | Widely used, variable dimensions |
+| [Cohere](https://docs.cohere.com/docs/embeddings) | `embed-v4.0` | 1024 | Search-optimized, multilingual |
+| [Google](https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings) | `text-embedding-005` | 768 | Via Vertex AI |
+
+VoyageAI is recommended by Anthropic for use with Claude. Any provider works — pick based on your latency, cost, and language requirements.
+
+## Vector Search
+
+Store embeddings and search by cosine similarity — vectors that point in similar directions have similar meaning:
+
+```python
+import numpy as np
+
+class VectorStore:
+    def __init__(self):
+        self.embeddings: list[np.ndarray] = []
+        self.documents: list[dict] = []
+
+    def add(self, embedding: list[float], metadata: dict):
+        self.embeddings.append(np.array(embedding))
+        self.documents.append(metadata)
+
+    def search(self, query_embedding: list[float], k: int = 3) -> list[tuple[dict, float]]:
+        query = np.array(query_embedding)
+        scores = []
+        for i, emb in enumerate(self.embeddings):
+            similarity = np.dot(query, emb) / (np.linalg.norm(query) * np.linalg.norm(emb))
+            scores.append((self.documents[i], similarity))
+        scores.sort(key=lambda x: x[1], reverse=True)
+        return scores[:k]
+```
+
+This in-memory implementation works for prototyping. For production, use a purpose-built vector database.
+
+### Vector Database Providers
+
+| Database | Type | Best for |
+| --- | --- | --- |
+| [Pinecone](https://www.pinecone.io/) | Managed SaaS | Zero-ops, fast start, serverless option |
+| [Weaviate](https://weaviate.io/) | Open source / cloud | Hybrid search built-in, GraphQL API |
+| [Chroma](https://www.trychroma.com/) | Open source | Local development, Python-native |
+| [pgvector](https://github.com/pgvector/pgvector) | Postgres extension | Already using Postgres, keep one database |
+| [Qdrant](https://qdrant.tech/) | Open source / cloud | High performance, filtering support |
+| [Milvus](https://milvus.io/) | Open source / cloud | Large-scale, distributed workloads |
+
+The interface is the same regardless of provider: store vectors with metadata, search by similarity.
+
+## BM25 Lexical Search
+
+Semantic search finds conceptually similar text but can miss exact term matches. A query for incident ID `INC-2023-Q4-011` may retrieve conceptually related cybersecurity content instead of the paragraph containing that exact ID.
+
+BM25 (Best Match 25) is a lexical search algorithm that scores documents by term frequency weighted by rarity. Common words like "the" get low weight; rare terms like incident IDs get high weight.
+
+```python
+from rank_bm25 import BM25Okapi
+
+class BM25Index:
+    def __init__(self):
+        self.documents: list[dict] = []
+        self.corpus: list[list[str]] = []
+        self.bm25 = None
+
+    def add_document(self, document: dict):
+        self.documents.append(document)
+        self.corpus.append(document["content"].lower().split())
+        self.bm25 = BM25Okapi(self.corpus)
+
+    def search(self, query: str, k: int = 3) -> list[tuple[dict, float]]:
+        tokens = query.lower().split()
+        scores = self.bm25.get_scores(tokens)
+        top_indices = scores.argsort()[-k:][::-1]
+        return [(self.documents[i], scores[i]) for i in top_indices]
+```
+
+| Search Type | Excels at | Weak at |
+| --- | --- | --- |
+| Semantic (vector) | Synonyms, paraphrasing, conceptual similarity | Exact IDs, technical terms, specific phrases |
+| Lexical (BM25) | Exact matches, IDs, technical terms | Synonyms, conceptual similarity |
+
+## Hybrid Retrieval
+
+Production RAG systems combine both search methods and merge results with Reciprocal Rank Fusion (RRF):
+
+```python
+def reciprocal_rank_fusion(
+    result_lists: list[list[tuple[dict, float]]],
+    k: int = 60,
+) -> list[tuple[dict, float]]:
+    """Merge ranked results from multiple search methods."""
+    scores: dict[int, float] = {}
+    doc_map: dict[int, dict] = {}
+
+    for results in result_lists:
+        for rank, (doc, _) in enumerate(results):
+            doc_id = id(doc)
+            doc_map[doc_id] = doc
+            scores[doc_id] = scores.get(doc_id, 0) + 1 / (k + rank + 1)
+
+    sorted_ids = sorted(scores, key=scores.get, reverse=True)
+    return [(doc_map[did], scores[did]) for did in sorted_ids]
+
+# Usage
+vector_results = vector_store.search(query_embedding, k=5)
+bm25_results = bm25_index.search(query_text, k=5)
+merged = reciprocal_rank_fusion([vector_results, bm25_results])
+```
+
+RRF normalizes across scoring scales — vector search returns cosine similarity while BM25 returns term frequency scores. By using rank positions instead of raw scores, RRF merges them fairly. Documents that rank highly in both systems rise to the top.
+
+The architecture is extensible. Any search index that returns ranked results can be added as another input to the fusion function — keyword-based, graph-based, or domain-specific indexes all plug in the same way.
+
+## Related
+
+- [What is RAG](/retrieval/rag) — architecture overview and full pipeline example
+- [Chunking Strategies](/retrieval/chunking-strategies) — how to split documents before embedding
+- [Cost Optimization](/production/cost-optimization) — RAG reduces per-query token cost
+- [VoyageAI docs](https://docs.voyageai.com/)
+- [Anthropic RAG cookbook](https://github.com/anthropics/anthropic-cookbook/tree/main/misc/retrieval_augmented_generation)

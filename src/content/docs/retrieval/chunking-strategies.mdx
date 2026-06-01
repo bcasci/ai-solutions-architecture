@@ -1,0 +1,100 @@
+---
+title: "Chunking Strategies"
+description: "Split documents into retrieval-friendly chunks using size-based, sentence-based, or structure-based approaches — and know when to use each."
+section: "retrieval"
+order: 2
+tags: ["rag", "chunking", "preprocessing"]
+lastVerified: "2026-06-01"
+---
+Chunking strategy directly determines retrieval quality. Bad chunks cause wrong answers even with a perfect retrieval system. The goal: each chunk should contain one coherent idea with enough context to be useful on its own.
+
+## Size-Based Chunking
+
+Split text into fixed-length segments with overlap to avoid cutting mid-sentence:
+
+```python
+def chunk_by_size(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+        chunks.append(text[start:end])
+        start = end - overlap if end < len(text) else len(text)
+    return chunks
+```
+
+Simple, reliable, works with any content type including code. The overlap prevents losing context at chunk boundaries.
+
+**Best for:** Code, mixed content, unknown formats. This is the most common production default because it works everywhere with no assumptions about document structure.
+
+## Sentence-Based Chunking
+
+Split on sentence boundaries, then group sentences into chunks:
+
+```python
+import re
+
+def chunk_by_sentence(
+    text: str,
+    max_sentences: int = 5,
+    overlap_sentences: int = 1,
+) -> list[str]:
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    chunks = []
+    start = 0
+
+    while start < len(sentences):
+        end = min(start + max_sentences, len(sentences))
+        chunks.append(" ".join(sentences[start:end]))
+        start += max_sentences - overlap_sentences
+
+    return chunks
+```
+
+Better preservation of meaning than size-based, but the regex may not handle all edge cases (abbreviations, decimal numbers).
+
+**Best for:** Prose, articles, reports — content where sentence boundaries are meaningful.
+
+## Structure-Based Chunking
+
+Split on document structure when the format is predictable:
+
+```python
+import re
+
+def chunk_by_section(text: str) -> list[str]:
+    return re.split(r"\n## ", text)
+```
+
+Highest quality when it works, but only viable when you control the document format (Markdown, HTML with consistent headers).
+
+**Best for:** Markdown docs, HTML with consistent headers, structured content you control.
+
+## Choosing a Strategy
+
+| Strategy | Best for | Trade-off |
+| --- | --- | --- |
+| Size-based + overlap | Code, mixed content, unknown formats | May split semantic units |
+| Sentence-based | Prose, articles, reports | Regex edge cases |
+| Structure-based | Markdown, HTML with headers | Requires predictable format |
+| Semantic | Research papers, multi-topic docs | Computationally expensive |
+
+:::tip
+Chunk size directly affects retrieval quality. Chunks that are too large dilute relevance; chunks that are too small lose context. Start with 500-1000 characters and tune based on your retrieval accuracy.
+:::
+
+## Chunk Size Tuning
+
+There's no universal best chunk size — it depends on your content and queries:
+
+- **Too small** (< 200 chars): Chunks lose context. A sentence fragment about "Q4 revenue" without the surrounding paragraph is useless.
+- **Too large** (> 2000 chars): Chunks contain multiple topics. A query about pricing retrieves a chunk that's 80% about product features.
+- **Sweet spot** (500-1000 chars): Each chunk covers one idea with enough context to stand alone.
+
+Measure retrieval quality by checking whether the correct chunk appears in the top-k results for a set of test queries. Adjust chunk size until hit rate stabilizes.
+
+## Related
+
+- [What is RAG](/retrieval/rag) — architecture overview and full pipeline example
+- [Embeddings & Vector Search](/retrieval/embeddings-and-search) — what happens after chunking
+- [Evaluation](/prompting/evaluation) — measure retrieval and answer quality
