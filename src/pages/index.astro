@@ -9,16 +9,16 @@ import { SITE } from '../consts';
 const docs = await getCollection('docs', ({ data }) => !data.draft);
 
 const sectionMeta = [
-  { key: 'start-here', label: 'Start Here', description: 'Get up and running with Claude in 60 seconds.' },
-  { key: 'the-api', label: 'The API', description: 'Request mechanics — models, messages, streaming, multimodal input, and tool use.' },
-  { key: 'prompting', label: 'Prompting', description: 'Prompt engineering — system prompts, structured output, evaluation, and extraction.' },
-  { key: 'retrieval', label: 'RAG (Retrieval Augmented Generation)', description: 'Give Claude knowledge it doesn\'t have — chunking, embeddings, and RAG pipelines.' },
-  { key: 'agents', label: 'Agents', description: 'Orchestration patterns, autonomous agent loops, and multi-agent systems.' },
-  { key: 'claude-code', label: 'Claude Code', description: 'Set up, configure, and extend your terminal-based coding assistant.' },
-  { key: 'mcp', label: 'MCP', description: 'Model Context Protocol — the standard for connecting Claude to external tools and data.' },
-  { key: 'production', label: 'Production', description: 'Ship reliably at scale.' },
-  { key: 'scenarios', label: 'Scenarios', description: 'Real-world situations that combine multiple patterns.' },
-  { key: 'reference', label: 'Reference', description: 'Quick lookups and external resources.' },
+  { key: 'start-here', label: 'Start Here' },
+  { key: 'the-api', label: 'The API' },
+  { key: 'prompting', label: 'Prompting' },
+  { key: 'retrieval', label: 'RAG (Retrieval Augmented Generation)' },
+  { key: 'agents', label: 'Agents' },
+  { key: 'claude-code', label: 'Claude Code' },
+  { key: 'mcp', label: 'MCP' },
+  { key: 'production', label: 'Production' },
+  { key: 'scenarios', label: 'Scenarios' },
+  { key: 'reference', label: 'Reference' },
 ];
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -148,7 +148,6 @@ const sections = sectionMeta.map((meta) => ({
               <h2 class="text-sm font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                 {section.label}
               </h2>
-              <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{section.description}</p>
               <ul class="mt-3 space-y-0.5">
                 {section.pages.map((page) => (
                   <li class="text-sm text-gray-600 dark:text-gray-400">
