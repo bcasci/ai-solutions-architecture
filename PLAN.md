@@ -10,13 +10,19 @@ Developers and teams building with Anthropic who want to get things done fast. T
 
 ## Source Material
 
-Content scraped from Anthropic Skilljar (https://anthropic.skilljar.com/):
+Content scraped from [Anthropic Skilljar](https://anthropic.skilljar.com/), distilled, reorganized by topic, and enriched with external references (Anthropic docs, agentskills.io, cookbooks, etc.).
 
-- **Building with the Claude API**
-- **Claude Code in Action**
-- **Introduction to Agent Skills**
+### Skilljar Entry Point
 
-Content is distilled, reorganized by topic, and enriched with external references (Anthropic docs, agentskills.io, cookbooks, etc.).
+- Profile/start page: <https://anthropic.skilljar.com/accounts/profile/?next=/>
+
+### Courses
+
+| Course | URL |
+| --- | --- |
+| Building with the Claude API | <https://anthropic.skilljar.com/claude-with-the-anthropic-api> |
+| Claude Code in Action | <https://anthropic.skilljar.com/claude-code-in-action> |
+| Introduction to Agent Skills | <https://anthropic.skilljar.com/introduction-to-agent-skills> |
 
 ## Future Direction
 
@@ -101,29 +107,46 @@ URL structure supports this: `/patterns/rag/` (concept) → `/patterns/rag/claud
 
 ## Workflow
 
-### Phase 0: Tooling (current)
+### Phase 0: Tooling (complete)
 - [x] Write project plan
-- [ ] Build content evaluation skill (rubric-based prompt for scoring/critiquing draft pages)
+- [x] Build content-extraction skill (standardized inventory capture from any web page)
+- [x] Build content-evaluation skill (7-criterion quality rubric with SHIP/REVISE/REWRITE verdicts)
+- [x] Build page-writing skill (MDX synthesis with template, style guide, and conventions)
 
 ### Phase 1: Content Extraction
-- [ ] Log into Skilljar (user assists with auth)
-- [ ] Scrape all 3 courses systematically using Playwright
-- [ ] Produce content inventory (markdown file: every piece of content, source, topic tags, importance)
+
+- [ ] User logs into Skilljar via Playwright browser (auth-gated, requires manual login)
+- [ ] Navigate to each course URL and map the full structure (modules, lessons, sub-pages)
+- [ ] Produce a course sitemap before extracting content (confirms scope, identifies lesson count)
+- [ ] Scrape each lesson page using Playwright, then run the content-extraction skill on each
+- [ ] All inventory records appended to `tmp/content-inventory.md`
+- [ ] Review inventory for completeness — verify all lessons captured
+
+#### Scraping Strategy
+
+1. Start at the profile page: <https://anthropic.skilljar.com/accounts/profile/?next=/>
+2. Navigate to each course URL (see table above)
+3. On each course page, identify and follow all module/lesson links
+4. For each lesson: capture the page content, then process through content-extraction skill
+5. Repeat until all lessons across all 3 courses are inventoried
 
 ### Phase 2: Content Mapping (Plan Mode)
+
 - [ ] Map extracted content → site sections
 - [ ] Identify gaps (topics courses skip that builders need)
 - [ ] Identify redundancy (same concept repeated across courses)
 - [ ] Finalize section assignments
 
 ### Phase 3: Writing
+
 - [ ] Write each page — synthesized, not copied
-- [ ] Run evaluation skill on each page
-- [ ] Revise based on evaluation
+- [ ] Run content-evaluation skill on each page
+- [ ] Revise based on evaluation until verdict is SHIP
 - [ ] Cross-reference with Anthropic public docs for accuracy
 - [ ] Add external links and references
 
 ### Phase 4: Design & Polish
+
 - [ ] Design header/hero concepts
 - [ ] Build component library (callouts, code blocks, diagrams)
 - [ ] Navigation sidebar
@@ -132,25 +155,20 @@ URL structure supports this: `/patterns/rag/` (concept) → `/patterns/rag/claud
 - [ ] Dark mode
 
 ### Phase 5: Review & Ship
+
 - [ ] Full content review pass
 - [ ] Cross-link audit (are related topics linked?)
 - [ ] Deploy
 
 ---
 
-## Content Evaluation Rubric
+## Content Pipeline Skills
 
-Each page is scored on these criteria (built into evaluation skill):
+The evaluation rubric, extraction format, and page writing conventions are defined in the skills — not duplicated here. See:
 
-| Criterion | Description |
-|---|---|
-| **Completeness** | Covers everything from source material on this topic |
-| **Accuracy** | Cross-referenced against Anthropic public docs |
-| **Conciseness** | No filler, respects reader's time |
-| **Actionability** | Reader knows what to DO after reading |
-| **Code Quality** | Examples are correct, minimal, and runnable |
-| **Cross-linking** | Links to related topics and external references |
-| **Structure** | Logical flow, scannable headings, good use of lists/tables |
+- `.claude/skills/content-extraction/SKILL.md` — inventory capture format and topic tags
+- `.claude/skills/content-evaluation/SKILL.md` — 7-criterion rubric and SHIP/REVISE/REWRITE verdicts
+- `.claude/skills/page-writing/SKILL.md` — page template, writing voice, and conventions
 
 ---
 
