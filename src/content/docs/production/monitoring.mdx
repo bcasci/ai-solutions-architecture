@@ -1,0 +1,305 @@
+---
+title: "Monitoring & Observability"
+description: "Track token usage, costs, latency, and errors across your Claude API integration with structured logging and actionable metrics."
+section: "production"
+order: 5
+tags: ["monitoring", "production", "cost", "error-handling", "messages-api"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Every API response from Claude includes usage data, timing information, and request identifiers. Production systems should capture all of it. This page covers what to log, how to track costs, and how to build dashboards that surface problems before users notice them.
+
+## The Usage Object
+
+Every `messages.create` response includes a `usage` field with token counts:
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain quicksort in two sentences."}],
+)
+
+usage = response.usage
+print(f"Input tokens:  {usage.input_tokens}")
+print(f"Output tokens: {usage.output_tokens}")
+print(f"Cache write:   {usage.cache_creation_input_tokens}")
+print(f"Cache read:    {usage.cache_read_input_tokens}")
+```
+
+The full usage breakdown:
+
+| Field | Description |
+| --- | --- |
+| `input_tokens` | Tokens in your request (non-cached) |
+| `output_tokens` | Tokens Claude generated |
+| `cache_creation_input_tokens` | Tokens written to cache on this request |
+| `cache_read_input_tokens` | Tokens served from cache (90% cost reduction) |
+
+Total input tokens billed = `input_tokens` + `cache_creation_input_tokens` + `cache_read_input_tokens`. Token counts won't match your visible content exactly — the API transforms requests internally before they reach the model.
+
+## Structured Request Logging
+
+Log every API call with enough context to debug failures and analyze usage patterns:
+
+```python
+import anthropic
+import time
+import json
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger("claude_api")
+
+client = anthropic.Anthropic()
+
+def tracked_create(*, messages, model="claude-sonnet-4-20250514", max_tokens=1024, **kwargs):
+    """Wrap messages.create with structured logging."""
+    request_meta = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "message_count": len(messages),
+    }
+
+    start = time.monotonic()
+    try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            messages=messages,
+            **kwargs,
+        )
+        elapsed = time.monotonic() - start
+
+        log_entry = {
+            "event": "api_call",
+            "request_id": response.id,
+            "model": response.model,
+            "status": "success",
+            "stop_reason": response.stop_reason,
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+            "cache_write_tokens": response.usage.cache_creation_input_tokens,
+            "cache_read_tokens": response.usage.cache_read_input_tokens,
+            "latency_ms": round(elapsed * 1000),
+        }
+        logger.info(json.dumps(log_entry))
+        return response
+
+    except anthropic.APIStatusError as e:
+        elapsed = time.monotonic() - start
+        log_entry = {
+            "event": "api_call",
+            "status": "error",
+            "error_type": type(e).__name__,
+            "status_code": e.status_code,
+            "request_id": getattr(e, "request_id", None),
+            "latency_ms": round(elapsed * 1000),
+            **request_meta,
+        }
+        logger.error(json.dumps(log_entry))
+        raise
+
+response = tracked_create(
+    messages=[{"role": "user", "content": "Hello"}]
+)
+```
+
+Every log entry is structured JSON — queryable by any log aggregation system (Datadog, CloudWatch, Loki, Elasticsearch).
+
+## Cost Tracking
+
+Token counts from the usage object map directly to costs. Build a cost calculator from the pricing table:
+
+```python
+# Pricing per million tokens (as of 2025 — verify current rates)
+PRICING = {
+    "claude-sonnet-4-20250514": {
+        "input": 3.00,
+        "output": 15.00,
+        "cache_write": 3.75,    # 1.25x input
+        "cache_read": 0.30,     # 0.1x input
+    },
+    "claude-haiku-3-5-20241022": {
+        "input": 0.80,
+        "output": 4.00,
+        "cache_write": 1.00,
+        "cache_read": 0.08,
+    },
+}
+
+def estimate_cost(response) -> float:
+    """Estimate cost in USD from a message response."""
+    model = response.model
+    rates = PRICING.get(model)
+    if not rates:
+        return 0.0
+
+    usage = response.usage
+    cost = (
+        (usage.input_tokens * rates["input"])
+        + (usage.output_tokens * rates["output"])
+        + (usage.cache_creation_input_tokens * rates["cache_write"])
+        + (usage.cache_read_input_tokens * rates["cache_read"])
+    ) / 1_000_000
+
+    return round(cost, 6)
+
+cost = estimate_cost(response)
+print(f"Estimated cost: ${cost:.6f}")
+```
+
+:::warning
+Pricing changes. Hardcoding rates is fine for estimates and dashboards, but verify against the [Anthropic pricing page](https://www.anthropic.com/pricing) periodically. For billing-critical calculations, use the Anthropic admin console.
+:::
+
+## Latency Metrics
+
+Track three latency dimensions:
+
+| Metric | What it measures | Why it matters |
+| --- | --- | --- |
+| **Total latency** | Time from request to final response | User-facing experience |
+| **Time to first token (TTFT)** | Time until streaming begins | Perceived responsiveness |
+| **Tokens per second** | Output generation throughput | Streaming smoothness |
+
+For streaming responses, measure TTFT separately:
+
+```python
+import anthropic
+import time
+
+client = anthropic.Anthropic()
+
+start = time.monotonic()
+first_token_time = None
+token_count = 0
+
+with client.messages.stream(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain TCP handshake"}],
+) as stream:
+    for text in stream.text_stream:
+        if first_token_time is None:
+            first_token_time = time.monotonic()
+        token_count += 1
+
+total_time = time.monotonic() - start
+ttft = first_token_time - start if first_token_time else total_time
+
+print(f"TTFT:          {ttft*1000:.0f}ms")
+print(f"Total latency: {total_time*1000:.0f}ms")
+print(f"Tokens/sec:    {token_count / (total_time - ttft):.0f}" if total_time > ttft else "N/A")
+```
+
+Latency varies by model, input length, and output length. Establish baselines for your specific use case and alert on significant deviations.
+
+## Key Metrics Dashboard
+
+Track these metrics in production:
+
+| Metric | Aggregation | Alert threshold |
+| --- | --- | --- |
+| Request count | Per minute | Sudden drops (service down) |
+| Error rate | % of requests returning 4xx/5xx | > 5% over 5 minutes |
+| p50 / p95 / p99 latency | Per endpoint | p95 > 2x baseline |
+| Input tokens per request | Average, p95 | Unexpected spikes (prompt injection, context bloat) |
+| Output tokens per request | Average, p95 | Runaway generation |
+| Cache hit rate | % of input tokens from cache | Drop below 50% (invalidation bug) |
+| Daily cost | Sum of estimated costs | > budget threshold |
+| Rate limit hits (429s) | Count per minute | Any sustained occurrence |
+| Overloaded errors (529s) | Count per minute | Any occurrence |
+
+## Debugging Failed Requests
+
+Every API error includes a `request_id`. Log it on every failure:
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+try:
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Hello"}],
+    )
+except anthropic.APIStatusError as e:
+    print(f"Error: {e.status_code} - {e.message}")
+    print(f"Request ID: {e.request_id}")
+    # Log this request_id — Anthropic support can trace it
+```
+
+A debugging checklist for common failures:
+
+| Symptom | Likely cause | Check |
+| --- | --- | --- |
+| Sudden 401 errors | API key expired or rotated | Verify `ANTHROPIC_API_KEY` |
+| Intermittent 429s | Rate limit hit | Check your tier limits and request patterns |
+| Sustained 529s | API capacity issues | Switch non-urgent work to Batch API |
+| Increasing latency | Context window growing | Monitor input token counts per request |
+| Unexpected costs | Output token bloat or cache misses | Check `max_tokens` settings and cache hit rate |
+| Empty or truncated responses | `max_tokens` too low or `stop_reason: max_tokens` | Check `stop_reason` on every response |
+
+:::tip
+Always check `stop_reason` in your response handler. A value of `"max_tokens"` means Claude was cut off mid-response — the output is incomplete. Log these as warnings.
+:::
+
+## Response Metadata
+
+Beyond usage, the response includes metadata useful for monitoring:
+
+```python
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+
+print(f"Response ID:    {response.id}")
+print(f"Model:          {response.model}")
+print(f"Stop reason:    {response.stop_reason}")
+print(f"Service tier:   {response.usage.service_tier}")
+print(f"Inference geo:  {response.usage.inference_geo}")
+```
+
+The `service_tier` field (`standard`, `priority`, or `batch`) confirms which pricing tier processed the request. The `inference_geo` field shows the geographic region — useful for latency analysis and data residency compliance.
+
+## Quick Reference
+
+```python
+# Minimum viable monitoring — add to every API call
+import time
+
+start = time.monotonic()
+response = client.messages.create(...)
+latency_ms = round((time.monotonic() - start) * 1000)
+
+# Log these five things on every call
+log = {
+    "request_id": response.id,
+    "model": response.model,
+    "input_tokens": response.usage.input_tokens,
+    "output_tokens": response.usage.output_tokens,
+    "latency_ms": latency_ms,
+    "stop_reason": response.stop_reason,
+}
+```
+
+## Related
+
+- [Error Handling & Retries](/production/error-handling) — exception types, retry strategies, and status codes
+- [Rate Limits & Scaling](/production/rate-limits) — understanding and managing 429 errors
+- [Cost Optimization & Caching](/production/cost-optimization) — reducing costs with caching and batching
+- [Messages API](/foundations/messages-api) — request/response structure and the usage object
+- [Streaming](/foundations/streaming) — streaming-specific monitoring considerations
+- [Anthropic API reference](https://docs.anthropic.com/en/api/messages)
+- [Anthropic pricing](https://www.anthropic.com/pricing)

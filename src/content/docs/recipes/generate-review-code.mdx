@@ -1,0 +1,134 @@
+---
+title: "Generate & Review Code"
+description: "Generate code from a spec and review it with a second Claude call — the two-pass pattern for higher quality output."
+section: "recipes"
+order: 4
+tags: ["code-generation", "code-review", "two-pass", "evaluation"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Generate code from a specification, then immediately review it with a second Claude call. This two-pass pattern catches bugs, security issues, and edge cases that a single generation pass often misses.
+
+## The Script
+
+```python
+import anthropic
+import json
+import sys
+
+client = anthropic.Anthropic()
+MODEL = "claude-sonnet-4-20250514"
+
+GENERATE_SYSTEM = """You are an expert software engineer. Given a specification, write clean,
+production-ready code. Include type hints, error handling, and docstrings.
+Output ONLY the code — no explanation, no markdown fences."""
+
+REVIEW_SYSTEM = """You are a senior code reviewer. Review the provided code against the
+original spec. Return a JSON object with this structure:
+{
+  "verdict": "pass" | "needs_changes",
+  "issues": [
+    {"severity": "critical|major|minor", "line_hint": "description of location", "problem": "what's wrong", "fix": "how to fix it"}
+  ],
+  "strengths": ["what the code does well"],
+  "summary": "one-sentence overall assessment"
+}
+Be strict. Flag real problems, not style nitpicks."""
+
+
+def generate_code(spec: str) -> str:
+    """Pass 1: Generate code from a specification."""
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=4096,
+        system=GENERATE_SYSTEM,
+        messages=[{"role": "user", "content": f"Write code for this spec:\n\n{spec}"}],
+    )
+    return response.content[0].text
+
+
+def review_code(spec: str, code: str) -> dict:
+    """Pass 2: Review generated code against the original spec."""
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        system=REVIEW_SYSTEM,
+        messages=[{
+            "role": "user",
+            "content": f"## Original Spec\n{spec}\n\n## Generated Code\n```\n{code}\n```\n\nReview this code.",
+        }],
+    )
+    # Parse the JSON response
+    text = response.content[0].text
+    # Handle cases where the model wraps JSON in markdown fences
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1].rsplit("```", 1)[0]
+    return json.loads(text)
+
+
+def generate_and_review(spec: str) -> tuple[str, dict]:
+    """Two-pass: generate then review."""
+    print("Generating code...")
+    code = generate_code(spec)
+
+    print("Reviewing code...")
+    review = review_code(spec, code)
+
+    return code, review
+
+
+if __name__ == "__main__":
+    spec = """
+    Create a Python function `retry_with_backoff` that:
+    - Takes a callable and max_retries (default 3)
+    - Retries on any exception with exponential backoff
+    - Supports a configurable base delay (default 1 second)
+    - Returns the function result on success
+    - Raises the last exception after all retries fail
+    - Logs each retry attempt
+    """.strip()
+
+    if len(sys.argv) > 1:
+        spec = sys.argv[1]
+
+    code, review = generate_and_review(spec)
+
+    print("\n=== GENERATED CODE ===")
+    print(code)
+    print("\n=== CODE REVIEW ===")
+    print(f"Verdict: {review['verdict']}")
+    print(f"Summary: {review['summary']}")
+    if review["issues"]:
+        print("\nIssues:")
+        for issue in review["issues"]:
+            print(f"  [{issue['severity']}] {issue['problem']}")
+            print(f"    Fix: {issue['fix']}")
+    if review.get("strengths"):
+        print("\nStrengths:")
+        for s in review["strengths"]:
+            print(f"  + {s}")
+```
+
+## How It Works
+
+1. **Pass 1 (Generate)** — Claude writes code from a spec. The system prompt demands production-quality output with type hints and error handling.
+2. **Pass 2 (Review)** — a separate Claude call reviews the generated code against the original spec. The reviewer returns structured JSON with severity-rated issues and specific fixes.
+
+The key insight: the reviewer has both the spec and the code, so it can catch spec deviations that the generator might introduce. Using separate system prompts for each pass prevents the model from being biased toward its own output.
+
+:::tip
+Extend this into a loop: if the review verdict is `needs_changes`, feed the issues back to the generator for a revision pass. Two iterations usually resolve all critical issues.
+:::
+
+:::warning
+The review prompt asks for JSON output. For higher reliability in production, use [structured output](/foundations/structured-output) with a schema to guarantee valid JSON.
+:::
+
+## Related
+
+- [Structured Output](/foundations/structured-output) — enforcing JSON schemas on responses
+- [Evaluation](/patterns/evaluation) — systematic quality assessment patterns
+- [Classification & Routing](/patterns/classification-and-routing) — routing tasks to specialized prompts
+- [Anthropic docs — Messages](https://docs.anthropic.com/en/api/messages) — API reference

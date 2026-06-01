@@ -1,0 +1,237 @@
+---
+title: "Error Handling & Retries"
+description: "Handle API errors gracefully with proper exception handling, automatic retries, and exponential backoff strategies."
+section: "production"
+order: 2
+tags: ["error-handling", "retries", "api-basics", "production"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+API calls fail. Networks drop, rate limits trigger, servers overload. Production applications need to handle every failure mode gracefully — retry what's retryable, surface what's not, and never crash on a transient error. The Anthropic SDKs handle most of this automatically, but you need to understand what's happening under the hood.
+
+## Error Types
+
+Every API error returns an HTTP status code and a structured error body. The SDK maps these to typed exceptions:
+
+| Status code | SDK exception | Meaning | Retryable? |
+| --- | --- | --- | --- |
+| 400 | `BadRequestError` | Malformed request (bad parameters, invalid content) | No — fix the request |
+| 401 | `AuthenticationError` | Invalid or missing API key | No — check credentials |
+| 403 | `PermissionDeniedError` | Key lacks access to the requested resource | No — check permissions |
+| 404 | `NotFoundError` | Model or resource doesn't exist | No — check the model name |
+| 408 | `RequestTimeoutError` | Request took too long | Yes |
+| 409 | `ConflictError` | Lock or version conflict | Yes |
+| 422 | `UnprocessableEntityError` | Semantically invalid request | No — fix the request |
+| 429 | `RateLimitError` | Rate limit exceeded | Yes — after backoff |
+| 500 | `InternalServerError` | Anthropic server error | Yes |
+| 529 | `OverloadedError` | API is temporarily overloaded | Yes — after backoff |
+
+## Basic Error Handling
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+try:
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Hello, Claude"}]
+    )
+    print(message.content[0].text)
+
+except anthropic.BadRequestError as e:
+    print(f"Invalid request: {e.message}")
+
+except anthropic.AuthenticationError:
+    print("Check your ANTHROPIC_API_KEY")
+
+except anthropic.RateLimitError as e:
+    print(f"Rate limited. Retry after backoff. Request ID: {e.request_id}")
+
+except anthropic.OverloadedError:
+    print("API overloaded — retry shortly")
+
+except anthropic.APIStatusError as e:
+    print(f"API error {e.status_code}: {e.message}")
+    print(f"Request ID: {e.request_id}")
+
+except anthropic.APIConnectionError:
+    print("Network error — check your connection")
+```
+
+Every `APIStatusError` includes a `request_id` extracted from response headers. Log this for debugging with Anthropic support.
+
+## Automatic Retries
+
+Both the Python and TypeScript SDKs retry automatically on transient errors. The default configuration:
+
+| Setting | Default value |
+| --- | --- |
+| Max retries | 2 |
+| Initial delay | 0.5 seconds |
+| Max delay | 8 seconds |
+| Backoff | Exponential (2x) with jitter |
+| Retried status codes | 408, 409, 429, 500+ |
+
+The SDK respects `Retry-After` headers when present (up to 60 seconds). Otherwise it uses exponential backoff: `min(0.5 * 2^attempt, 8.0)` seconds, with +/- 25% jitter.
+
+### Configuring Retries
+
+```python
+import anthropic
+
+# Increase retries for high-reliability workloads
+client = anthropic.Anthropic(max_retries=5)
+
+# Disable automatic retries (handle them yourself)
+client = anthropic.Anthropic(max_retries=0)
+
+# Override per-request
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+    max_retries=3  # Override client default for this call
+)
+```
+
+TypeScript equivalent:
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({ maxRetries: 5 });
+
+const message = await client.messages.create({
+  model: "claude-sonnet-4-20250514",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: "Hello" }],
+  maxRetries: 3  // Per-request override
+});
+```
+
+## Custom Retry Logic
+
+When the built-in retry isn't enough — for example, if you need circuit breaking, logging, or different backoff curves — disable SDK retries and implement your own:
+
+```python
+import anthropic
+import time
+import random
+
+client = anthropic.Anthropic(max_retries=0)
+
+def call_with_retry(messages, max_attempts=5, base_delay=1.0):
+    for attempt in range(max_attempts):
+        try:
+            return client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1024,
+                messages=messages
+            )
+        except anthropic.RateLimitError as e:
+            if attempt == max_attempts - 1:
+                raise
+            delay = min(base_delay * (2 ** attempt), 30)
+            jitter = delay * random.uniform(0.75, 1.25)
+            print(f"Rate limited (attempt {attempt + 1}). Retrying in {jitter:.1f}s")
+            time.sleep(jitter)
+
+        except anthropic.OverloadedError:
+            if attempt == max_attempts - 1:
+                raise
+            delay = min(base_delay * (2 ** attempt), 60)
+            jitter = delay * random.uniform(0.75, 1.25)
+            print(f"Overloaded (attempt {attempt + 1}). Retrying in {jitter:.1f}s")
+            time.sleep(jitter)
+
+        except anthropic.APIStatusError as e:
+            if e.status_code >= 500:
+                if attempt == max_attempts - 1:
+                    raise
+                time.sleep(base_delay * (2 ** attempt))
+            else:
+                raise  # Don't retry client errors
+
+response = call_with_retry([{"role": "user", "content": "Hello"}])
+```
+
+:::warning
+Never retry 400-level errors (except 408, 409, 429). A `BadRequestError` will fail identically on every attempt — retrying wastes your rate limit budget.
+:::
+
+## Handling Overloaded Errors (529)
+
+The 529 status code means Anthropic's servers are temporarily at capacity. It's distinct from rate limiting (429) — your account still has quota, but the service can't take more load right now.
+
+Strategy:
+- Back off more aggressively than for 429 (start at 5-10 seconds)
+- Consider queuing requests and draining them gradually
+- If overloads persist, switch to the [Batch API](/production/cost-optimization#batch-api) for non-urgent work
+
+## Streaming Error Recovery
+
+With [streaming](/foundations/streaming), errors can occur mid-stream. The SDK raises exceptions when the stream breaks:
+
+```python
+import anthropic
+
+client = anthropic.Anthropic()
+
+try:
+    with client.messages.stream(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": "Write a detailed analysis"}]
+    ) as stream:
+        collected_text = ""
+        for text in stream.text_stream:
+            collected_text += text
+            print(text, end="", flush=True)
+
+except anthropic.APIConnectionError:
+    print(f"\nStream interrupted after: {len(collected_text)} chars")
+    # Decide: retry from scratch or use partial result
+
+except anthropic.APIStatusError as e:
+    print(f"\nStream error: {e.status_code}")
+```
+
+For long-running streams, consider checkpointing partial results so you can present what you have if the stream fails.
+
+:::tip
+Log the `request_id` from error responses. It's the fastest way to get help from Anthropic support when diagnosing intermittent issues.
+:::
+
+## Quick Reference
+
+```python
+import anthropic
+
+# Robust client setup
+client = anthropic.Anthropic(
+    max_retries=3,     # Increase from default 2
+    timeout=120.0      # Seconds before timeout (default: 600)
+)
+
+# Per-request timeout
+message = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+    timeout=30.0  # Shorter timeout for simple requests
+)
+```
+
+## Related
+
+- [Rate Limits & Scaling](/production/rate-limits) — understanding and managing 429 errors
+- [Cost Optimization & Caching](/production/cost-optimization) — batch API as an alternative to real-time retries
+- [Streaming](/foundations/streaming) — streaming-specific error considerations
+- [Monitoring](/production/monitoring) — tracking error rates in production
+- [Anthropic API errors reference](https://docs.anthropic.com/en/api/errors)
+- [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python)

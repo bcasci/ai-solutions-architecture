@@ -1,0 +1,113 @@
+---
+title: "Analyze a CSV"
+description: "Read a CSV file, send the data to Claude, and get analytical insights — with sampling for large files."
+section: "recipes"
+order: 3
+tags: ["csv", "data-analysis", "extraction"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Load a CSV, send it to Claude, and ask analytical questions. This recipe handles large files by sampling rows so you stay within context limits.
+
+## The Script
+
+```python
+import anthropic
+import csv
+import sys
+from pathlib import Path
+
+client = anthropic.Anthropic()
+MODEL = "claude-sonnet-4-20250514"
+MAX_ROWS = 200  # Sample limit for large CSVs
+
+SYSTEM_PROMPT = """You are a data analyst. When given CSV data:
+1. Describe the dataset structure (columns, types, row count)
+2. Identify key patterns, outliers, and trends
+3. Answer any specific questions the user asks
+4. Use actual numbers from the data — don't generalize.
+If the data is a sample, note that your analysis may not capture the full picture."""
+
+
+def load_csv(file_path: str, max_rows: int = MAX_ROWS) -> tuple[str, int]:
+    """Load CSV, sampling if necessary. Returns (formatted_text, total_rows)."""
+    rows = []
+    with open(file_path, newline="", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            rows.append(row)
+
+    total = len(rows) - 1  # exclude header
+    if total <= max_rows:
+        text = "\n".join(",".join(row) for row in rows)
+        return text, total
+
+    # Keep header + evenly spaced sample
+    header = rows[0]
+    data_rows = rows[1:]
+    step = len(data_rows) // max_rows
+    sampled = [data_rows[i] for i in range(0, len(data_rows), step)][:max_rows]
+    lines = [",".join(header)] + [",".join(r) for r in sampled]
+    return "\n".join(lines), total
+
+
+def analyze(file_path: str, question: str = "") -> str:
+    csv_text, total_rows = load_csv(file_path)
+
+    sample_note = ""
+    if total_rows > MAX_ROWS:
+        sample_note = f"\n\n(Note: This is a {MAX_ROWS}-row sample from {total_rows} total rows.)"
+
+    user_message = f"Here is a CSV dataset ({total_rows} rows total):{sample_note}\n\n```\n{csv_text}\n```"
+    if question:
+        user_message += f"\n\nSpecific question: {question}"
+    else:
+        user_message += "\n\nAnalyze this dataset. Highlight the most interesting findings."
+
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=2048,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_message}],
+    )
+    return response.content[0].text
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python analyze_csv.py <path-to-csv> [question]")
+        sys.exit(1)
+
+    file_path = sys.argv[1]
+    question = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else ""
+    print(analyze(file_path, question))
+```
+
+**Usage examples:**
+
+```bash
+# General analysis
+python analyze_csv.py sales_data.csv
+
+# Specific question
+python analyze_csv.py sales_data.csv "Which region had the highest growth rate?"
+```
+
+## How It Works
+
+1. **Load and sample** — the CSV is read in full but truncated to 200 rows if it exceeds that. Sampling is evenly spaced (not just the first N rows) to capture data across the full range.
+2. **Context framing** — the system prompt tells Claude to act as a data analyst and ground its answers in actual numbers. If the data is sampled, Claude is told explicitly.
+3. **Flexible questions** — pass a specific question as a CLI argument, or omit it for a general analysis.
+
+:::tip
+For very large CSVs (100k+ rows), compute summary statistics with pandas first and send those to Claude instead of raw rows. Claude is better at interpreting aggregated data than scanning hundreds of rows.
+:::
+
+## Related
+
+- [Extraction](/patterns/extraction) — pulling structured data from unstructured text
+- [Structured Output](/foundations/structured-output) — getting JSON responses for programmatic use
+- [Models & Parameters](/foundations/models-and-parameters) — choosing `max_tokens` for longer analyses
+- [Anthropic docs — Messages](https://docs.anthropic.com/en/api/messages) — API reference

@@ -1,0 +1,85 @@
+---
+title: "Glossary & Links"
+description: "Key terms defined and curated links to Anthropic docs, SDKs, and community resources."
+section: "reference"
+order: 1
+tags: ["glossary", "reference", "links", "resources"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Quick-reference glossary for terms used throughout this guide, plus curated links to official and community resources.
+
+## Glossary
+
+**Context Window** — The maximum amount of text (measured in tokens) a model can process in a single request, including both input and output. Claude Sonnet and Opus support 200k tokens.
+
+**Embeddings** — Numerical vector representations of text that capture semantic meaning. Used for similarity search, clustering, and retrieval. Anthropic does not offer an embeddings API — use providers like Voyage AI or OpenAI for embedding generation.
+
+**Extended Thinking** — A Claude feature where the model reasons through complex problems in a structured thinking block before producing its final answer. Improves accuracy on hard tasks at the cost of additional output tokens.
+
+**Grounding** — Anchoring model responses in provided source material (documents, search results, databases) rather than relying solely on training data. Reduces hallucination.
+
+**Hallucination** — When a model generates plausible-sounding but factually incorrect information. Mitigate with grounding, RAG, and explicit instructions to say "I don't know."
+
+**MCP (Model Context Protocol)** — An open standard for connecting AI models to external tools and data sources. Defines how clients discover and invoke tools served by MCP servers.
+
+**Messages API** — Anthropic's primary API endpoint (`/v1/messages`) for sending prompts to Claude and receiving responses. Supports text, images, tool use, and streaming.
+
+**Multi-turn Conversation** — A sequence of user and assistant messages sent together in a single API call, giving the model conversational context.
+
+**RAG (Retrieval-Augmented Generation)** — A pattern that retrieves relevant documents from an external source and includes them in the prompt, giving the model factual context for its response.
+
+**Streaming** — Receiving a model's response incrementally (token by token) via server-sent events instead of waiting for the complete response. Reduces time-to-first-token.
+
+**Structured Output** — Constraining Claude's response to a specific format (usually JSON matching a schema) so it can be parsed programmatically.
+
+**System Prompt** — An initial instruction block that sets Claude's behavior, persona, or constraints for the entire conversation. Sent separately from user messages.
+
+**Temperature** — A parameter (0.0 to 1.0) controlling response randomness. Lower values produce more deterministic output; higher values increase creativity and variation.
+
+**Tokens** — The atomic units of text that models process. Roughly 1 token = 4 characters in English. Both input and output tokens count toward usage and billing.
+
+**Tool Use (Function Calling)** — A pattern where Claude can request to call external functions you define. You provide tool schemas; Claude decides when to call them and with what arguments; your code executes them and returns results.
+
+**Top-k / Top-p** — Sampling parameters that limit which tokens the model considers. Top-k restricts to the k most likely tokens; top-p (nucleus sampling) restricts to tokens whose cumulative probability reaches p.
+
+## Official Anthropic Resources
+
+| Resource | URL |
+| --- | --- |
+| Anthropic Docs Home | [docs.anthropic.com](https://docs.anthropic.com) |
+| API Reference | [docs.anthropic.com/en/api](https://docs.anthropic.com/en/api) |
+| Messages API | [docs.anthropic.com/en/api/messages](https://docs.anthropic.com/en/api/messages) |
+| Python SDK | [github.com/anthropics/anthropic-sdk-python](https://github.com/anthropics/anthropic-sdk-python) |
+| TypeScript SDK | [github.com/anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anthropic-sdk-typescript) |
+| Anthropic Cookbook | [github.com/anthropics/anthropic-cookbook](https://github.com/anthropics/anthropic-cookbook) |
+| Prompt Engineering Guide | [docs.anthropic.com/en/docs/build-with-claude/prompt-engineering](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering) |
+| Model Context Protocol (MCP) | [modelcontextprotocol.io](https://modelcontextprotocol.io) |
+
+## Claude Code & Agent Resources
+
+| Resource | URL |
+| --- | --- |
+| Claude Code Docs | [docs.anthropic.com/en/docs/claude-code](https://docs.anthropic.com/en/docs/claude-code) |
+| Claude Code CLI Reference | [docs.anthropic.com/en/docs/claude-code/cli-reference](https://docs.anthropic.com/en/docs/claude-code/cli-reference) |
+| Agent SDK (Python) | [github.com/anthropics/anthropic-sdk-python](https://github.com/anthropics/anthropic-sdk-python) |
+| Agent Skills Spec | [agentskills.io](https://agentskills.io) |
+| MCP Servers Directory | [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers) |
+
+## Community & Learning
+
+| Resource | URL |
+| --- | --- |
+| Anthropic Courses | [github.com/anthropics/courses](https://github.com/anthropics/courses) |
+| Anthropic Discord | [discord.gg/anthropic](https://discord.gg/anthropic) |
+| Claude API Pricing | [anthropic.com/pricing](https://www.anthropic.com/pricing) |
+
+## Related
+
+- [Messages API](/foundations/messages-api) — start here for API fundamentals
+- [Models & Parameters](/foundations/models-and-parameters) — model comparison and parameter reference
+- [Tool Use](/patterns/tool-use) — function calling patterns
+- [MCP](/agents/mcp) — Model Context Protocol deep dive
+- [RAG](/patterns/rag) — retrieval-augmented generation patterns

@@ -1,0 +1,117 @@
+---
+title: "Summarize a Document"
+description: "Load a document and get a structured summary from Claude, with chunking for long files."
+section: "recipes"
+order: 1
+tags: ["summarization", "documents", "chunking"]
+lastVerified: "2026-06-01"
+---
+
+# {frontmatter.title}
+
+Feed a document to Claude and get a concise summary back. This recipe handles short documents in a single call and long documents by chunking them first.
+
+## The Script
+
+```python
+import anthropic
+import sys
+from pathlib import Path
+
+client = anthropic.Anthropic()
+MODEL = "claude-sonnet-4-20250514"
+MAX_CHUNK_CHARS = 80_000  # ~20k tokens, well within context limits
+
+SYSTEM_PROMPT = """You are a document summarizer. Produce a structured summary with:
+- **TL;DR**: 1-2 sentence overview
+- **Key Points**: bulleted list of the most important facts or arguments
+- **Details**: brief expansion on anything that needs context
+Be concise. Omit filler. Preserve numbers, names, and dates exactly."""
+
+
+def chunk_text(text: str, max_chars: int = MAX_CHUNK_CHARS) -> list[str]:
+    """Split text into chunks at paragraph boundaries."""
+    if len(text) <= max_chars:
+        return [text]
+    paragraphs = text.split("\n\n")
+    chunks, current = [], ""
+    for para in paragraphs:
+        if len(current) + len(para) + 2 > max_chars and current:
+            chunks.append(current)
+            current = para
+        else:
+            current = f"{current}\n\n{para}" if current else para
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def summarize(text: str) -> str:
+    chunks = chunk_text(text)
+
+    if len(chunks) == 1:
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=1024,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": f"Summarize this document:\n\n{text}"}],
+        )
+        return response.content[0].text
+
+    # Summarize each chunk, then combine
+    chunk_summaries = []
+    for i, chunk in enumerate(chunks, 1):
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=512,
+            system=SYSTEM_PROMPT,
+            messages=[{
+                "role": "user",
+                "content": f"Summarize part {i} of {len(chunks)}:\n\n{chunk}",
+            }],
+        )
+        chunk_summaries.append(response.content[0].text)
+
+    combined = "\n\n---\n\n".join(chunk_summaries)
+    response = client.messages.create(
+        model=MODEL,
+        max_tokens=1024,
+        system=SYSTEM_PROMPT,
+        messages=[{
+            "role": "user",
+            "content": f"Combine these partial summaries into one coherent summary:\n\n{combined}",
+        }],
+    )
+    return response.content[0].text
+
+
+if __name__ == "__main__":
+    file_path = sys.argv[1] if len(sys.argv) > 1 else None
+    if not file_path:
+        print("Usage: python summarize.py <path-to-document>")
+        sys.exit(1)
+    text = Path(file_path).read_text()
+    print(summarize(text))
+```
+
+## How It Works
+
+1. **Short docs** go straight to Claude with the summarization system prompt.
+2. **Long docs** get split at paragraph boundaries into chunks under 80k characters. Each chunk is summarized independently, then a final call merges the partial summaries into one cohesive output.
+
+The system prompt forces structured output (TL;DR, Key Points, Details) so every summary has a consistent format you can parse or display.
+
+:::tip
+Adjust `MAX_CHUNK_CHARS` based on your model's context window. Sonnet handles 200k tokens, so 80k characters per chunk is conservative. Increase it if your documents have few natural paragraph breaks.
+:::
+
+:::warning
+This recipe reads plain text. For PDFs, use a library like `pymupdf` or `pdfplumber` to extract text first. For images of documents, use Claude's [vision capabilities](/foundations/multimodal-input) instead.
+:::
+
+## Related
+
+- [Messages API](/foundations/messages-api) — how `messages.create` works under the hood
+- [System Prompts](/foundations/system-prompts) — crafting effective system prompts
+- [Models & Parameters](/foundations/models-and-parameters) — choosing the right model and token limits
+- [Anthropic docs — Messages](https://docs.anthropic.com/en/api/messages) — API reference
