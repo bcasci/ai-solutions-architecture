@@ -18,11 +18,11 @@ Content scraped from [Anthropic Skilljar](https://anthropic.skilljar.com/), dist
 
 ### Courses
 
-| Course | URL |
-| --- | --- |
+| Course                       | URL                                                            |
+| ---------------------------- | -------------------------------------------------------------- |
 | Building with the Claude API | <https://anthropic.skilljar.com/claude-with-the-anthropic-api> |
-| Claude Code in Action | <https://anthropic.skilljar.com/claude-code-in-action> |
-| Introduction to Agent Skills | <https://anthropic.skilljar.com/introduction-to-agent-skills> |
+| Claude Code in Action        | <https://anthropic.skilljar.com/claude-code-in-action>         |
+| Introduction to Agent Skills | <https://anthropic.skilljar.com/introduction-to-agent-skills>  |
 
 ## Future Direction
 
@@ -108,50 +108,71 @@ URL structure supports this: `/patterns/rag/` (concept) → `/patterns/rag/claud
 ## Workflow
 
 ### Phase 0: Tooling (complete)
+
 - [x] Write project plan
-- [x] Build content-extraction skill (standardized inventory capture from any web page)
-- [x] Build content-evaluation skill (7-criterion quality rubric with SHIP/REVISE/REWRITE verdicts)
-- [x] Build page-writing skill (MDX synthesis with template, style guide, and conventions)
+- [x] Build content-extraction skill
+- [x] Build content-evaluation skill
+- [x] Build page-writing skill
 
-### Phase 1: Content Extraction
+### Phase 1: Content Extraction (complete)
 
-- [ ] User logs into Skilljar via Playwright browser (auth-gated, requires manual login)
-- [ ] Navigate to each course URL and map the full structure (modules, lessons, sub-pages)
-- [ ] Produce a course sitemap before extracting content (confirms scope, identifies lesson count)
-- [ ] Scrape each lesson page using Playwright, then run the content-extraction skill on each
-- [ ] All inventory records appended to `tmp/content-inventory.md`
-- [ ] Review inventory for completeness — verify all lessons captured
+- [x] User logs into Skilljar via Playwright browser
+- [x] Navigate to each course URL and map the full structure
+- [x] Produce a course sitemap and get approval before scraping
+- [x] Scrape each lesson page and capture into standardized inventory records
+- [x] All inventory records written to `tmp/content-inventory.md`
+- [x] Review inventory for completeness — all content pages covered
 
-#### Scraping Strategy
+#### Results
 
-1. Start at the profile page: <https://anthropic.skilljar.com/accounts/profile/?next=/>
-2. Navigate to each course URL (see table above)
-3. On each course page, identify and follow all module/lesson links
-4. For each lesson: capture the page content, then process through content-extraction skill
-5. Repeat until all lessons across all 3 courses are inventoried
+- 110 pages scraped across 3 courses
+- 85 pages with extractable text content (349K chars), 25 video-only
+- 86 inventory records in `tmp/content-inventory.md`
+- 100% coverage — every content page has an inventory record
+- Course 3 (Agent Skills) uses a different page layout (`#lesson-main-content` vs hidden details pane) — initial scrape missed it, re-scraped with corrected selector
+- Diagram images are presentation slides — illustrative only, no unique info beyond text
+- Raw page captures stored in `tmp/snapshots/*.json`
+- New topic tags proposed: `extended-thinking`, `files-api`, `parallelization`, `claude-code-commands`, `hooks`, `ci-cd`
 
-#### Content Handling
+### Phase 2: Content Mapping (main session)
 
-- **Videos:** Skip. The page text covers their content.
-- **Diagram images:** Analyze. Architecture visuals, flowcharts, and concept maps often contain information not in the text. Describe components, relationships, and flows.
-- **Parallelism:** Playwright browses pages sequentially (single browser). Content extraction processing can be parallelized via subagents after page capture.
+- [ ] Map each inventory record to one or more site map sections (tag-based)
+- [ ] Produce a mapping table: site section → inventory records → proposed page(s)
+- [ ] Identify gaps — site sections with zero or insufficient coverage
+- [ ] Identify redundancy — overlapping content across courses (e.g., Claude Code in both Course 1 and 2)
+- [ ] Plan gap-filling strategy (fetch current Anthropic docs, cookbooks, public references)
+- [ ] Adjust site map if needed (add/remove/merge sections based on actual coverage)
+- [ ] Finalize the page list with section assignments and source inventory references
 
-### Phase 2: Content Mapping
+#### Known Gaps (from Phase 1)
 
-- [ ] Map extracted content → site sections
-- [ ] Identify gaps (topics courses skip that builders need)
-- [ ] Identify redundancy (same concept repeated across courses)
-- [ ] Finalize section assignments
+- **Production section**: zero inventory coverage — courses don't cover error handling, rate limits, safety, cost, or monitoring
+- **Agent SDK**: Course 3 covers skills but not the Agent SDK itself — source from docs and cookbooks
+- **Multi-Agent Systems**: not covered in any course
+- **Classification (as a pattern)**: only routing workflow exists, not dedicated classification content
+- **Start Here / Recipes / Reference**: will be authored during writing, not extracted
 
-### Phase 3: Writing
+### Phase 3: Writing (parallel subagents)
 
-- [ ] Write each page — synthesized, not copied
-- [ ] Run content-evaluation skill on each page
-- [ ] Revise based on evaluation until verdict is SHIP
-- [ ] Cross-reference with Anthropic public docs for accuracy
-- [ ] Add external links and references
+Dispatch pages to background subagents in batches of 4-5 pages each. Each subagent independently:
 
-### Phase 4: Design & Polish
+- [ ] Reads the relevant inventory entries for its assigned pages
+- [ ] Synthesizes each page with runnable code examples, callouts, diagrams, and cross-references
+- [ ] Scores each page against the quality rubric to determine SHIP/REVISE/REWRITE
+- [ ] Revises and re-scores until the page ships
+- [ ] Verifies accuracy against current Anthropic docs
+- [ ] Adds external links and references
+
+Main session coordinates dispatch, monitors progress, and handles any pages that need manual intervention. Start Phase 4 design work while writing subagents run in background.
+
+#### Subagent Batching Strategy
+
+- Group pages by site section so each subagent has thematic coherence
+- ~5-6 subagents covering all pages
+- Each subagent prompt includes: page list, inventory file path, site map for cross-linking, skill activation language
+- Gap-fill pages (Production, Agent SDK) get their own subagent with explicit instructions to source from Anthropic docs via context7
+
+### Phase 4: Design & Polish (main session + parallel where possible)
 
 - [ ] Design header/hero concepts
 - [ ] Build component library (callouts, code blocks, diagrams)
@@ -160,21 +181,36 @@ URL structure supports this: `/patterns/rag/` (concept) → `/patterns/rag/claud
 - [ ] Mobile responsive
 - [ ] Dark mode
 
-### Phase 5: Review & Ship
+### Phase 5: Review & Ship (main session)
 
 - [ ] Full content review pass
 - [ ] Cross-link audit (are related topics linked?)
-- [ ] Deploy
+- [ ] Verify production build works locally
 
 ---
 
-## Content Pipeline Skills
+## Git Strategy
 
-The evaluation rubric, extraction format, and page writing conventions are defined in the skills — not duplicated here. See:
+Initialize git if not already done. Make logical commits at natural milestones — each commit should represent a coherent, reviewable unit of work. Suggested commit points:
 
-- `.claude/skills/content-extraction/SKILL.md` — inventory capture format and topic tags
-- `.claude/skills/content-evaluation/SKILL.md` — 7-criterion rubric and SHIP/REVISE/REWRITE verdicts
-- `.claude/skills/page-writing/SKILL.md` — page template, writing voice, and conventions
+1. After Phase 2 mapping is finalized and site map is adjusted
+2. After each batch of content pages lands (per site section)
+3. After component library and page layout are built
+4. After navigation and search are added
+5. After dark mode and responsive layout
+6. After final review pass
+
+Use descriptive commit messages that explain the "what and why." Don't commit broken builds.
+
+---
+
+## Content Pipeline
+
+Three stages, each backed by a skill in `.claude/skills/`:
+
+1. **Extract** — capture web page content into standardized inventory records with topic tags, importance ratings, code examples, key concepts, patterns, and gotchas
+2. **Write** — synthesize inventory entries into polished MDX guide pages with runnable examples, callouts, diagrams, and cross-references
+3. **Evaluate** — score pages against a quality rubric covering completeness, accuracy, conciseness, actionability, code quality, cross-linking, and structure to produce SHIP/REVISE/REWRITE verdicts
 
 ---
 
@@ -183,3 +219,6 @@ The evaluation rubric, extraction format, and page writing conventions are defin
 - Deployment target (GitHub Pages / Vercel / Cloudflare) — decide later, no impact on architecture
 - Additional Skilljar courses to add over time
 - Competitive positioning (Claude vs others) — deferred to future provider-agnostic expansion
+- Course 3 (Agent Skills) content extracted — covers skills deeply but not the broader Agent SDK
+- Production section has zero Skilljar coverage — will need dedicated research from Anthropic docs
+- New topic tags added to `references/topic-tags.md` (extended-thinking, files-api, parallelization, claude-code-commands, hooks, ci-cd, skills-authoring)

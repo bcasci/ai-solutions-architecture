@@ -35,7 +35,17 @@ Assign one or more of these tags to each inventory record. Tags map content to s
 - `agent-sdk` — Anthropic Agent SDK
 - `multi-agent` — Multi-agent systems
 - `claude-code` — Claude Code platform, usage
+- `claude-code-commands` — Custom slash commands and command patterns
+- `hooks` — Claude Code hooks (PreToolUse, PostToolUse)
+- `skills-authoring` — Creating, configuring, sharing, and troubleshooting skills
 - `tool-design` — Designing tools for agents
+- `parallelization` — Parallelization workflow patterns
+
+## Features
+
+- `extended-thinking` — Extended thinking / chain-of-thought budget
+- `files-api` — Code execution sandbox and Files API
+- `ci-cd` — GitHub Actions, automation pipelines
 
 ## Production
 
