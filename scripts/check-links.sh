@@ -4,6 +4,7 @@
 set -euo pipefail
 
 DIST="dist"
+BASE_PATH="/ai-solutions-architecture"
 ERRORS=0
 
 if [ ! -d "$DIST" ]; then
@@ -22,6 +23,9 @@ for link in $LINKS; do
   if [ -z "$clean" ]; then
     continue
   fi
+
+  # Strip base path prefix if present
+  clean="${clean#$BASE_PATH}"
 
   # Check if the target exists in dist (as dir with index.html, or as a file)
   target="${DIST}${clean}"
