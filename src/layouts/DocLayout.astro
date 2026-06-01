@@ -18,13 +18,13 @@ const sectionLabel = section.replace(/-/g, ' ');
     <Sidebar />
     <main class="min-w-0 flex-1">
       <div class="mx-auto max-w-3xl px-8 py-16 lg:px-12">
-        <p class="text-sm font-medium uppercase tracking-wide text-indigo-600">
+        <p class="text-sm font-medium uppercase tracking-wide text-indigo-800 dark:text-indigo-400">
           {sectionLabel}
         </p>
-        <h1 class="mt-2 text-4xl font-bold tracking-tight text-gray-900">
+        <h1 class="mt-2 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
           {title}
         </h1>
-        <p class="mt-4 text-lg text-gray-600">{description}</p>
+        <p class="mt-4 text-lg text-gray-700 dark:text-gray-400">{description}</p>
         <article class="prose prose-lg prose-indigo mt-12 max-w-none">
           <slot />
         </article>
@@ -46,8 +46,21 @@ const sectionLabel = section.replace(/-/g, ' ');
     max-width: 100%;
     height: auto;
   }
-  /* Prevent prose styles from interfering with SVG text */
-  .prose .mermaid * {
-    all: revert;
+  /* Prevent prose typography styles from interfering with Mermaid SVGs */
+  .prose .mermaid text {
+    font-size: inherit;
+    line-height: normal;
+    color: inherit;
+  }
+  .prose .mermaid a {
+    text-decoration: none;
+    color: inherit;
+  }
+  .prose .mermaid pre,
+  .prose .mermaid code {
+    background: none;
+    padding: 0;
+    border: 0;
+    font-size: inherit;
   }
 </style>
