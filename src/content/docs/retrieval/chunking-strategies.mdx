@@ -68,6 +68,21 @@ def chunk_by_section(text: str) -> list[str]:
 
 Highest quality when it works, but only viable when you control the document format (Markdown, HTML with consistent headers).
 
+For example, a product changelog chunked by section headers produces one chunk per release — each self-contained with its version, date, and changes:
+
+**Input:**
+```markdown
+## v3.2.0 — 2025-03-01
+- Added webhook retry with exponential backoff
+- Fixed race condition in concurrent ticket updates
+
+## v3.1.0 — 2025-02-15
+- New `/api/tickets/search` endpoint with full-text search
+- Deprecated `/api/tickets/find` (removal in v4.0)
+```
+
+**Output:** Two chunks, one per release. Each chunk is self-contained and retrieval-friendly — a query about "webhook retry" matches the v3.2.0 chunk precisely.
+
 **Best for:** Markdown docs, HTML with consistent headers, structured content you control.
 
 ## Choosing a Strategy

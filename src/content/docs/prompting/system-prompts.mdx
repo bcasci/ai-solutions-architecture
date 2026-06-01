@@ -22,7 +22,7 @@ message = client.messages.create(
     max_tokens=1024,
     system="You are a senior Python developer. Give concise code reviews. Flag bugs, suggest improvements, skip praise.",
     messages=[
-        {"role": "user", "content": "Review this: def add(a, b): return a + b"}
+        {"role": "user", "content": "Review this:\n\ndef get_user(db, user_id):\n    query = f\"SELECT * FROM users WHERE id = {user_id}\"\n    return db.execute(query).fetchone()"}
     ]
 )
 
@@ -69,8 +69,8 @@ The first line of your prompt is the most important. Lead with a direct action v
 
 | Weak | Strong |
 | --- | --- |
-| "What can you tell me about solar panels?" | "Write three paragraphs about how solar panels work." |
-| "I was wondering about geothermal energy..." | "Identify three countries that use geothermal energy. Include generation stats." |
+| "What can you tell me about REST API failures?" | "List three common REST API failure modes with recommended retry strategies for each." |
+| "I was wondering about rate limiting..." | "Design a token bucket rate limiter for an API gateway. Include config parameters and pseudocode." |
 | "What should this person eat?" | "Generate a one-day meal plan for an athlete with these dietary restrictions." |
 
 Use instructions, not questions. "Write," "Create," "Generate," "Analyze," "Identify" — these verbs immediately tell Claude what to produce.

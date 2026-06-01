@@ -85,7 +85,7 @@ Example format:
     return json.loads("[" + response.content[0].text)
 
 # Generate and save
-dataset = generate_dataset("Python utility functions for string processing")
+dataset = generate_dataset("Python functions for validating and sanitizing user input in a web application")
 with open("dataset.json", "w") as f:
     json.dump(dataset, f, indent=2)
 
@@ -248,6 +248,80 @@ def grade_by_code(output: str, expected_format: str) -> int:
 ```
 
 Code graders validate syntax, not correctness. `ast.parse()` confirms valid Python but cannot tell you whether the logic solves the right problem. Pair code graders with model graders for full coverage.
+
+### Semantic Code Grading
+
+Syntax validators check structure, but you often need to verify that generated code has the right *behavior*: correct function name, required patterns, no runtime errors.
+
+```python
+import ast
+import subprocess
+import tempfile
+
+def grade_code_quality(
+    output: str,
+    expected_function: str,
+    required_patterns: list[str] | None = None,
+) -> dict:
+    """Grade generated code on syntax, naming, patterns, and execution."""
+    score = 0
+    issues = []
+
+    # 1. Valid syntax (3 points)
+    try:
+        tree = ast.parse(output.strip())
+        score += 3
+    except SyntaxError as e:
+        return {"score": 0, "issues": [f"Syntax error: {e}"]}
+
+    # 2. Expected function defined (3 points)
+    func_names = [
+        node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)
+    ]
+    if expected_function in func_names:
+        score += 3
+    else:
+        issues.append(f"Expected function '{expected_function}', found: {func_names}")
+
+    # 3. Required patterns present (2 points)
+    if required_patterns:
+        missing = [p for p in required_patterns if p not in output]
+        if not missing:
+            score += 2
+        else:
+            issues.append(f"Missing patterns: {missing}")
+
+    # 4. Executes without error (2 points)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(output.strip())
+        f.flush()
+        result = subprocess.run(
+            ["python", f.name], capture_output=True, timeout=5
+        )
+    if result.returncode == 0:
+        score += 2
+    else:
+        issues.append(f"Runtime error: {result.stderr.decode()[:200]}")
+
+    return {"score": score, "issues": issues}
+```
+
+Use it in your eval pipeline with test cases that specify what the generated code should contain:
+
+```python
+test_cases = [
+    {
+        "task": "Write a function to validate and sanitize user email input for a web app",
+        "expected_function": "sanitize_email",
+        "required_patterns": ["strip()", "lower()"],
+    },
+    {
+        "task": "Write a function to validate a webhook signature using HMAC-SHA256",
+        "expected_function": "verify_webhook",
+        "required_patterns": ["hmac", "sha256", "compare_digest"],
+    },
+]
+```
 
 ## Combining Graders
 

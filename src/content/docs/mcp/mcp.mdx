@@ -65,38 +65,41 @@ pip install mcp pydantic
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
-mcp = FastMCP("DocumentMCP", log_level="ERROR")
+mcp = FastMCP("TicketMCP", log_level="ERROR")
 
-# In-memory document store for demo purposes
-docs = {
-    "report.pdf": "Q2 revenue grew 15% year-over-year.",
-    "spec.txt": "The system shall support 10,000 concurrent connections.",
+# In-memory ticket store for demo purposes
+tickets = {
+    "TKT-1042": {"title": "Billing error on March invoice", "status": "open", "priority": "high", "customer": "alice@acme.com"},
+    "TKT-1043": {"title": "API returns 500 on /v2/orders", "status": "open", "priority": "critical", "customer": "bob@startup.io"},
+    "TKT-1044": {"title": "Request to upgrade plan", "status": "pending", "priority": "low", "customer": "carol@bigcorp.com"},
 }
 
 @mcp.tool(
-    name="read_doc_contents",
-    description="Read the contents of a document and return it as a string."
+    name="get_ticket",
+    description="Retrieve a support ticket by ID. Returns the ticket's title, status, priority, and customer email."
 )
-def read_document(
-    doc_id: str = Field(description="Id of the document to read")
-) -> str:
-    if doc_id not in docs:
-        raise ValueError(f"Doc with id {doc_id} not found")
-    return docs[doc_id]
+def get_ticket(
+    ticket_id: str = Field(description="The ticket ID, e.g. TKT-1042")
+) -> dict:
+    if ticket_id not in tickets:
+        raise ValueError(f"Ticket {ticket_id} not found")
+    return {"ticket_id": ticket_id, **tickets[ticket_id]}
 
 @mcp.tool(
-    name="edit_document",
-    description="Edit a document by replacing a string with a new string."
+    name="update_ticket_status",
+    description="Update the status of a support ticket. Valid statuses: open, pending, in_progress, resolved, closed."
 )
-def edit_document(
-    doc_id: str = Field(description="Id of the document to edit"),
-    old_str: str = Field(description="Text to replace. Must match exactly."),
-    new_str: str = Field(description="Replacement text."),
+def update_ticket_status(
+    ticket_id: str = Field(description="The ticket ID to update"),
+    new_status: str = Field(description="New status: open, pending, in_progress, resolved, or closed"),
 ) -> str:
-    if doc_id not in docs:
-        raise ValueError(f"Doc with id {doc_id} not found")
-    docs[doc_id] = docs[doc_id].replace(old_str, new_str)
-    return f"Updated {doc_id}"
+    if ticket_id not in tickets:
+        raise ValueError(f"Ticket {ticket_id} not found")
+    valid = {"open", "pending", "in_progress", "resolved", "closed"}
+    if new_status not in valid:
+        raise ValueError(f"Invalid status '{new_status}'. Must be one of: {valid}")
+    tickets[ticket_id]["status"] = new_status
+    return f"Updated {ticket_id} status to {new_status}"
 ```
 
 The `@mcp.tool` decorator auto-generates JSON schema from Python type hints. `Field(description=...)` provides the parameter descriptions that Claude reads to understand each argument. Raise `ValueError` with descriptive messages — Claude can read and recover from them.
@@ -107,25 +110,25 @@ Resources expose **read-only data** — think of them as GET endpoints. Tools pe
 
 ```python
 @mcp.resource(
-    "docs://documents",
+    "tickets://list",
     mime_type="application/json"
 )
-def list_docs() -> list[str]:
-    return list(docs.keys())
+def list_tickets() -> list[dict]:
+    return [{"ticket_id": tid, **t} for tid, t in tickets.items()]
 
 @mcp.resource(
-    "docs://documents/{doc_id}",
-    mime_type="text/plain"
+    "tickets://ticket/{ticket_id}",
+    mime_type="application/json"
 )
-def fetch_doc(doc_id: str) -> str:
-    if doc_id not in docs:
-        raise ValueError(f"Doc with id {doc_id} not found")
-    return docs[doc_id]
+def fetch_ticket(ticket_id: str) -> dict:
+    if ticket_id not in tickets:
+        raise ValueError(f"Ticket {ticket_id} not found")
+    return {"ticket_id": ticket_id, **tickets[ticket_id]}
 ```
 
 Two resource types:
-- **Direct** — static URI (`docs://documents`), no parameters. Use for enumerations and indexes.
-- **Templated** — parameterized URI (`docs://documents/{doc_id}`). The SDK extracts `{doc_id}` from the URI and passes it as a keyword argument automatically.
+- **Direct** — static URI (`tickets://list`), no parameters. Use for enumerations and indexes.
+- **Templated** — parameterized URI (`tickets://ticket/{ticket_id}`). The SDK extracts `{ticket_id}` from the URI and passes it as a keyword argument automatically.
 
 Resources are efficient for injecting context into prompts without a tool call round-trip — your client fetches the resource and includes it directly in the message.
 
@@ -137,17 +140,18 @@ MCP prompts are pre-built message templates that encode domain expertise. They p
 from mcp.server.fastmcp import base
 
 @mcp.prompt(
-    name="format",
-    description="Rewrites a document's contents in Markdown format."
+    name="triage",
+    description="Classify a support ticket's priority and suggest an owner based on the ticket content."
 )
-def format_document(
-    doc_id: str = Field(description="Id of the document to format")
+def triage_ticket(
+    ticket_id: str = Field(description="The ticket ID to triage")
 ) -> list[base.Message]:
     return [
         base.UserMessage(
-            f"Reformat the document with id '{doc_id}' using Markdown syntax. "
-            f"Add headers, bullet points, and tables as appropriate. "
-            f"Use the 'edit_document' tool to apply your changes."
+            f"Triage support ticket '{ticket_id}'. Use the 'get_ticket' tool to read its details, "
+            f"then classify the priority as critical, high, medium, or low. Suggest which team "
+            f"(billing, engineering, account-management) should own it. Use 'update_ticket_status' "
+            f"to set the status to 'in_progress' once triaged."
         )
     ]
 ```
@@ -210,7 +214,7 @@ async def run():
 
             # Send tools + user query to Claude
             client = anthropic.Anthropic()
-            messages = [{"role": "user", "content": "What does report.pdf contain?"}]
+            messages = [{"role": "user", "content": "What's the status of ticket TKT-1042?"}]
 
             while True:
                 response = client.messages.create(

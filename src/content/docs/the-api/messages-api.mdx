@@ -31,7 +31,7 @@ message = client.messages.create(
     model="claude-sonnet-4-20250514",
     max_tokens=1024,
     messages=[
-        {"role": "user", "content": "What is quantum computing? One sentence."}
+        {"role": "user", "content": "Extract the company name and total amount from this invoice:\n\nINVOICE #1042\nFrom: Acme Cloud Services LLC\nDate: 2025-03-15\nItems:\n  - API usage (March): $1,200.00\n  - Support tier (Pro): $300.00\nTotal: $1,500.00"}
     ]
 )
 
@@ -49,7 +49,7 @@ const message = await client.messages.create({
   model: "claude-sonnet-4-20250514",
   max_tokens: 1024,
   messages: [
-    { role: "user", content: "What is quantum computing? One sentence." }
+    { role: "user", content: "Extract the company name and total amount from this invoice:\n\nINVOICE #1042\nFrom: Acme Cloud Services LLC\nDate: 2025-03-15\nItems:\n  - API usage (March): $1,200.00\n  - Support tier (Pro): $300.00\nTotal: $1,500.00" }
   ]
 });
 
@@ -91,7 +91,7 @@ print(message.model_dump_json(indent=2))
   "content": [
     {
       "type": "text",
-      "text": "Quantum computing uses quantum-mechanical phenomena..."
+      "text": "Company: Acme Cloud Services LLC, Total: $1,500.00"
     }
   ],
   "stop_reason": "end_turn",
@@ -135,10 +135,10 @@ def chat(user_input: str) -> str:
     return assistant_text
 
 # Turn 1
-print(chat("Define quantum computing in one sentence."))
+print(chat("Extract the company name and total from this invoice: INVOICE #1042, From: Acme Cloud Services LLC, Total: $1,500.00"))
 
 # Turn 2 — Claude has context from turn 1
-print(chat("Now explain it to a five-year-old."))
+print(chat("Now also extract the payment terms and calculate the due date assuming net-30."))
 ```
 
 The pattern: append the user message, call the API with the full list, append Claude's response, repeat.

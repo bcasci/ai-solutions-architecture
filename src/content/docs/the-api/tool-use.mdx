@@ -79,6 +79,41 @@ get_current_datetime_tool = {
 
 Write 3-4 sentences in the description covering: what the tool does, when to use it, what it returns, and argument details. Vague descriptions lead to Claude misusing or ignoring the tool.
 
+Here's a more realistic example — a customer lookup tool for a B2B support application:
+
+```python
+def lookup_customer(email: str) -> dict:
+    """Look up a customer by email address. Returns account details or raises ValueError."""
+    # In production, this queries your database or CRM
+    customers = {
+        "alice@acme.com": {"name": "Alice Chen", "plan": "enterprise", "mrr": 2400, "status": "active"},
+        "bob@startup.io": {"name": "Bob Park", "plan": "growth", "mrr": 199, "status": "active"},
+    }
+    if email not in customers:
+        raise ValueError(f"No customer found with email: {email}")
+    return customers[email]
+
+lookup_customer_tool = {
+    "name": "lookup_customer",
+    "description": (
+        "Look up a customer account by email address. Returns the customer's "
+        "name, plan tier, monthly recurring revenue, and account status. Use "
+        "this when the user asks about a specific customer or needs account "
+        "details to resolve a support issue."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "email": {
+                "type": "string",
+                "description": "The customer's email address."
+            }
+        },
+        "required": ["email"]
+    }
+}
+```
+
 :::tip
 Use Claude itself to generate schemas — paste your function signature and the [tool use docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview) and ask it to write the JSON schema.
 :::
@@ -160,14 +195,14 @@ import json
 
 client = anthropic.Anthropic()
 
-tools = [get_current_datetime_tool, get_weather_tool]  # your tool schemas
+tools = [lookup_customer_tool, create_ticket_tool]  # your tool schemas
 
 def run_tool(name: str, tool_input: dict):
     """Route tool calls to implementations."""
-    if name == "get_current_datetime":
-        return get_current_datetime(**tool_input)
-    elif name == "get_weather":
-        return get_weather(**tool_input)
+    if name == "lookup_customer":
+        return lookup_customer(**tool_input)
+    elif name == "create_support_ticket":
+        return create_support_ticket(**tool_input)
     else:
         raise ValueError(f"Unknown tool: {name}")
 

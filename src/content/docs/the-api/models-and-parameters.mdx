@@ -51,13 +51,13 @@ Temperature controls randomness in token selection. Range: `0.0` to `1.0`.
 - **0.7 - 1.0**: Creative and diverse
 
 ```python
-# Deterministic output for code generation
+# Deterministic output for SQL generation
 message = client.messages.create(
     model="claude-sonnet-4-20250514",
     max_tokens=1024,
     temperature=0.0,
     messages=[
-        {"role": "user", "content": "Write a Python function to reverse a linked list."}
+        {"role": "user", "content": "Write a SQL query that finds customers who made a purchase in the last 30 days but have no open support tickets."}
     ]
 )
 ```
@@ -87,7 +87,7 @@ message = client.messages.create(
     max_tokens=1024,
     top_p=0.9,
     messages=[
-        {"role": "user", "content": "Suggest five names for a coffee shop."}
+        {"role": "user", "content": "Write five subject line variants for an email announcing a 15% price increase to existing customers."}
     ]
 )
 ```
@@ -105,7 +105,7 @@ message = client.messages.create(
     max_tokens=1024,
     top_k=40,
     messages=[
-        {"role": "user", "content": "Write a haiku about debugging."}
+        {"role": "user", "content": "Write a one-paragraph error message for a 429 rate limit response. Be helpful and suggest retry timing."}
     ]
 )
 ```

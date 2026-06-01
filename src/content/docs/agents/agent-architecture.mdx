@@ -156,22 +156,23 @@ client = anthropic.Anthropic()
 
 tools = [
     {
-        "name": "get_weather",
-        "description": "Get the current weather for a city.",
+        "name": "run_sql_query",
+        "description": "Execute a read-only SQL query against the analytics database and return the results as JSON.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "city": {"type": "string", "description": "City name"}
+                "query": {"type": "string", "description": "The SQL query to execute (SELECT only)"}
             },
-            "required": ["city"],
+            "required": ["query"],
         },
     }
 ]
 
 def execute_tool(name: str, input: dict) -> str:
     """Stub — replace with real implementations."""
-    if name == "get_weather":
-        return json.dumps({"temp_f": 72, "condition": "sunny", "city": input["city"]})
+    if name == "run_sql_query":
+        # In production, execute against your database with proper sandboxing
+        return json.dumps({"rows": [{"shipped_orders": 1247, "avg_order_value": 84.32}]})
     return json.dumps({"error": f"Unknown tool: {name}"})
 
 def run_agent(user_message: str) -> str:
@@ -202,7 +203,7 @@ def run_agent(user_message: str) -> str:
                 })
         messages.append({"role": "user", "content": tool_results})
 
-print(run_agent("What's the weather in Portland?"))
+print(run_agent("How many orders shipped last week and what was the average order value?"))
 ```
 
 The loop terminates when `stop_reason` is `"end_turn"` — Claude has finished and is returning a final response. When `stop_reason` is `"tool_use"`, Claude wants to call one or more tools before continuing.

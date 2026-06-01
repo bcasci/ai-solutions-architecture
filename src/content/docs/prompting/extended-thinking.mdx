@@ -22,7 +22,7 @@ response = client.messages.create(
     max_tokens=4096,
     thinking={"type": "enabled", "budget_tokens": 2048},
     messages=[
-        {"role": "user", "content": "What is 27 * 453 + 18 * 92?"}
+        {"role": "user", "content": "Our SaaS product costs $49/mo with 10,000 users. We're raising the price to $59/mo. Churn modeling predicts 8% of users will cancel and 5% will downgrade to the $29/mo free tier. Calculate the net monthly revenue impact."}
     ]
 )
 
@@ -45,7 +45,7 @@ const response = await client.messages.create({
     max_tokens: 4096,
     thinking: { type: "enabled", budget_tokens: 2048 },
     messages: [
-        { role: "user", content: "What is 27 * 453 + 18 * 92?" }
+        { role: "user", content: "Our SaaS product costs $49/mo with 10,000 users. We're raising the price to $59/mo. Churn modeling predicts 8% of users will cancel and 5% will downgrade to the $29/mo free tier. Calculate the net monthly revenue impact." }
     ],
 });
 
