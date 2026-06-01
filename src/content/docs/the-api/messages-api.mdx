@@ -74,7 +74,7 @@ Never expose your API key in client-side code. All requests to the Anthropic API
 Each message in the `messages` array has two fields: `role` (either `"user"` or `"assistant"`) and `content` (a string or array of content blocks for [multimodal input](/the-api/multimodal-input)).
 
 :::tip
-`max_tokens` is a safety ceiling, not a target. Claude generates what it deems appropriate and stops — it does not try to fill the limit. Set it high enough that responses won't be cut off, but don't worry about it inflating output.
+`max_tokens` is a safety ceiling, not a target. Claude stops when it finishes — it does not try to fill the limit. Set it high enough that responses won't be cut off, but don't worry about it inflating output.
 :::
 
 ## The Response Object

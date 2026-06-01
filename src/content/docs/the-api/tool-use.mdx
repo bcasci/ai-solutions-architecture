@@ -6,7 +6,7 @@ order: 5
 tags: ["tool-use", "api-basics", "agent-loops", "streaming"]
 lastVerified: "2026-06-01"
 ---
-Tool use lets Claude request that your application execute functions on its behalf — fetching live data, calling APIs, writing files, or anything else your code can do. Claude decides *when* to use a tool and *what parameters* to pass. Your code handles execution and returns results.
+Tool use lets Claude call functions through your application — fetching live data, calling APIs, writing files, or anything else your code can do. Claude decides *when* to use a tool and *what parameters* to pass. Your code handles execution and returns results.
 
 ## How Tool Use Works
 
@@ -39,7 +39,7 @@ Each tool needs two things: a function that does the work, and a JSON schema tha
 
 ### The Function
 
-Keep tool functions simple, single-purpose, and validated:
+Keep tool functions focused and single-purpose:
 
 ```python
 from datetime import datetime
@@ -77,7 +77,7 @@ get_current_datetime_tool = {
 }
 ```
 
-Write 3-4 sentences in the description covering: what the tool does, when to use it, what it returns, and argument details. Vague descriptions lead to Claude misusing or ignoring the tool.
+Write 3-4 sentences in the description covering: what the tool does, when to use it, what it returns, and argument details. Poor descriptions cause misuse.
 
 Here's a more realistic example — a customer lookup tool for a B2B support application:
 
@@ -115,7 +115,7 @@ lookup_customer_tool = {
 ```
 
 :::tip
-Use Claude itself to generate schemas — paste your function signature and the [tool use docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview) and ask it to write the JSON schema.
+Use Claude to generate schemas — paste your function signature and the [tool use docs](https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview) and ask it to write the JSON schema.
 :::
 
 ## Handling the Response

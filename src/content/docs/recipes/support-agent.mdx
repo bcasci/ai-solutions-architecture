@@ -1,6 +1,6 @@
 ---
 title: "Build a Support Agent"
-description: "A complete support agent combining routing, RAG, tool use, multi-turn conversation, and streaming — every major pattern in one runnable script."
+description: "A support agent combining routing, RAG, tool use, and multi-turn conversation in one runnable script."
 section: "recipes"
 order: 5
 tags: ["agents", "routing", "rag", "tool-use", "streaming", "multi-turn"]
@@ -8,7 +8,7 @@ lastVerified: "2026-06-01"
 ---
 import Callout from '../../../components/Callout.astro';
 
-This recipe combines every major pattern from the guide — [routing](/agents/agent-architecture#routing), [RAG](/retrieval/rag), [tool use](/the-api/tool-use), [multi-turn conversations](/the-api/messages-api#multi-turn-conversations), [system prompts](/prompting/system-prompts), and [streaming](/the-api/streaming) — into a single working support agent. It handles billing, technical, and account questions by routing to specialized handlers backed by tools and a knowledge base.
+This recipe combines patterns from across the guide — [routing](/agents/agent-architecture#routing), [RAG](/retrieval/rag), [tool use](/the-api/tool-use), [multi-turn conversations](/the-api/messages-api#multi-turn-conversations), [system prompts](/prompting/system-prompts), and [streaming](/the-api/streaming) — into a single working support agent. It handles billing, technical, and account questions by routing to specialized handlers backed by tools and a knowledge base.
 
 ## Architecture
 
@@ -72,7 +72,7 @@ HELP_ARTICLES = [
 
 
 def search_knowledge_base(query: str, top_k: int = 2) -> list[dict]:
-    """Simple keyword search over help articles. Replace with vector search in production."""
+    """Keyword search over help articles. Replace with vector search in production."""
     query_terms = set(query.lower().split())
     scored = []
     for article in HELP_ARTICLES:
@@ -239,7 +239,7 @@ def classify(message: str) -> str:
 ```
 
 <Callout type="info">
-The router uses Haiku for speed and cost — classification doesn't need a large model. The specialized handlers use Sonnet for quality. This is a common pattern: [cheap model for routing, capable model for generation](/the-api/models-and-parameters).
+The router uses Haiku for speed and cost — classification doesn't require a large model. The specialized handlers use Sonnet for quality. This is a common pattern: [cheap model for routing, capable model for generation](/the-api/models-and-parameters).
 </Callout>
 
 ## The Agent Loop
@@ -299,12 +299,12 @@ def run_agent(user_message: str, conversation: list[dict] | None = None) -> str:
 
         conversation.append({"role": "user", "content": tool_results})
 
-    return "I need to hand this off to a human agent — the issue is more complex than I can resolve."
+    return "Handing off to a human agent."
 ```
 
 ## Full Runnable Script
 
-Copy and paste the entire script. Set `ANTHROPIC_API_KEY` in your environment, then run it.
+Set `ANTHROPIC_API_KEY` in your environment and run it.
 
 ```python
 #!/usr/bin/env python3

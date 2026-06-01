@@ -6,7 +6,7 @@ order: 2
 tags: ["rag", "chunking", "preprocessing"]
 lastVerified: "2026-06-01"
 ---
-Chunking strategy directly determines retrieval quality. Bad chunks cause wrong answers even with a perfect retrieval system. The goal: each chunk should contain one coherent idea with enough context to be useful on its own.
+Chunking strategy shapes retrieval quality. Poor chunks produce wrong answers regardless of retrieval quality. The goal: each chunk should contain one coherent idea with enough context to be useful on its own.
 
 ## Size-Based Chunking
 
@@ -23,9 +23,9 @@ def chunk_by_size(text: str, chunk_size: int = 500, overlap: int = 50) -> list[s
     return chunks
 ```
 
-Simple, reliable, works with any content type including code. The overlap prevents losing context at chunk boundaries.
+Works with any content type including code. The overlap prevents losing context at chunk boundaries.
 
-**Best for:** Code, mixed content, unknown formats. This is the most common production default because it works everywhere with no assumptions about document structure.
+**Best for:** Code, mixed content, unknown formats. No assumptions about document structure.
 
 ## Sentence-Based Chunking
 
@@ -51,7 +51,7 @@ def chunk_by_sentence(
     return chunks
 ```
 
-Better preservation of meaning than size-based, but the regex may not handle all edge cases (abbreviations, decimal numbers).
+Preserves meaning across chunk boundaries, but the regex may not handle all edge cases (abbreviations, decimal numbers).
 
 **Best for:** Prose, articles, reports — content where sentence boundaries are meaningful.
 
@@ -66,7 +66,7 @@ def chunk_by_section(text: str) -> list[str]:
     return re.split(r"\n## ", text)
 ```
 
-Highest quality when it works, but only viable when you control the document format (Markdown, HTML with consistent headers).
+Best results when format is predictable, but only viable when you control the document format (Markdown, HTML with consistent headers).
 
 For example, a product changelog chunked by section headers produces one chunk per release — each self-contained with its version, date, and changes:
 
@@ -95,7 +95,7 @@ For example, a product changelog chunked by section headers produces one chunk p
 | Semantic | Research papers, multi-topic docs | Computationally expensive |
 
 :::tip
-Chunk size directly affects retrieval quality. Chunks that are too large dilute relevance; chunks that are too small lose context. Start with 500-1000 characters and tune based on your retrieval accuracy.
+Chunk size affects retrieval quality. Chunks that are too large dilute relevance; chunks that are too small lose context. Start with 500-1000 characters and tune based on your retrieval accuracy.
 :::
 
 ## Chunk Size Tuning

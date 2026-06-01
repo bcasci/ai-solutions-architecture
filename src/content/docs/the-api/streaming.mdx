@@ -8,7 +8,7 @@ lastVerified: "2026-06-01"
 ---
 Without streaming, the API waits for Claude to generate the entire response before returning anything. For long responses, that means 10-30 seconds of dead silence. Streaming sends text chunks as they're generated, so users see words appearing in real time. This page covers both streaming interfaces, the event model, and when to use streaming.
 
-## The Simple Interface
+## The High-Level Interface
 
 The Python SDK provides `client.messages.stream()` with a `text_stream` iterator that yields only the generated text — no event filtering needed.
 

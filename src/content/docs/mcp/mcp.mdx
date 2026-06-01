@@ -6,7 +6,7 @@ order: 1
 tags: ["mcp", "tool-use", "tool-design", "protocols"]
 lastVerified: "2026-06-01"
 ---
-MCP (Model Context Protocol) is a standard communication layer that lets you give Claude access to external tools and data without writing integration code from scratch. Instead of defining tool schemas and execution functions yourself, you connect to MCP servers that provide them pre-built.
+MCP (Model Context Protocol) is a standard communication layer that lets you give Claude access to external tools and data without custom integration code. Instead of defining tool schemas and execution functions yourself, you connect to MCP servers that provide them pre-built.
 
 ## When to Use MCP
 
@@ -19,7 +19,7 @@ If you've already seen [Tool Use](/the-api/tool-use), you know you can define to
 | **Ecosystem** | You build everything | Pre-built servers exist for GitHub, databases, Slack, file systems, and more |
 | **Overhead** | None — it's just API parameters | Server process + protocol layer |
 
-**Start with direct tool definitions** if you're building one app with a handful of custom tools. **Move to MCP** when you find yourself duplicating tool definitions across projects, want to share tools across a team, or want to use the growing ecosystem of pre-built MCP servers.
+**Start with direct tool definitions** if you're building one app with a handful of custom tools. **Move to MCP** when you find yourself duplicating tool definitions across projects, want to share tools across a team, or want to use pre-built MCP servers.
 
 Many production systems use both: direct tools for app-specific logic, MCP for standard integrations.
 
@@ -53,7 +53,7 @@ Two message types drive the tool workflow:
 
 ## Building an MCP Server
 
-The Python SDK (`mcp`) provides `FastMCP`, a high-level class that turns Python functions into MCP-compatible tools with one decorator.
+The Python SDK (`mcp`) provides `FastMCP`, a class that decorates Python functions as MCP tools.
 
 ```bash
 pip install mcp pydantic
@@ -169,15 +169,13 @@ if __name__ == "__main__":
 
 ## Testing with the Inspector
 
-The MCP SDK includes a browser-based inspector for testing servers in isolation — no client or Claude connection needed.
+The MCP SDK includes a browser-based inspector for testing servers locally.
 
 ```bash
 mcp dev mcp_server.py
 ```
 
 This starts a dev server on port 6277 with a browser UI where you can list and test tools, resources, and prompts individually. Use it to verify behavior before wiring up a client.
-
-**Development workflow:** code your server, test in the inspector, iterate, then connect to your application.
 
 ## Building an MCP Client
 
@@ -244,8 +242,6 @@ async def run():
 
 asyncio.run(run())
 ```
-
-The flow: discover tools via `list_tools()`, pass them to Claude with the user query, execute any tool calls via `call_tool()`, feed results back, repeat until `stop_reason` is `"end_turn"`.
 
 ### Reading Resources from the Client
 

@@ -6,7 +6,7 @@ order: 4
 tags: ["evaluation", "prompt-engineering", "structured-output", "testing"]
 lastVerified: "2026-06-01"
 ---
-Prompt engineering without evaluation is guesswork. An eval pipeline gives you objective scores so you can compare prompt versions, catch regressions, and ship with confidence. This page covers the full workflow: building test datasets, running evals, and grading with both code and model-based approaches.
+Prompt engineering without evaluation is guesswork. An eval pipeline gives you objective scores so you can compare prompt versions, catch regressions before they reach users. This page covers the full workflow: building test datasets, running evals, and grading with both code and model-based approaches.
 
 ## Why Evaluate Prompts
 
@@ -18,7 +18,7 @@ Three approaches, in order of reliability:
 2. **Test a few times, tweak** --- moderate risk. Catches some issues but still misses the long tail.
 3. **Run through an eval pipeline** --- highest reliability. Automated, objective, repeatable scoring across representative inputs.
 
-Always choose option 3 for any prompt going to production. The upfront investment pays for itself the first time you catch a regression.
+Always choose option 3 for any prompt going to production. Evals catch regressions before users do.
 
 ## The Eval Workflow
 
@@ -157,7 +157,7 @@ Return structured result dicts (not just scores) so you can inspect output text 
 
 ## Model-Based Grading
 
-A model grader uses Claude as a judge to evaluate response quality. The key insight: ask for strengths, weaknesses, and reasoning *before* the score. Without this, model graders default to middling scores around 6.
+A model grader uses Claude as a judge to evaluate response quality. The key insight: ask for strengths, weaknesses, and reasoning *before* the score. Without this, scores cluster in the middle range.
 
 ```python
 import json
@@ -197,12 +197,12 @@ Respond with a JSON object containing:
 Model graders are best for subjective criteria: task following, helpfulness, completeness, safety. They add an API call per test case, so budget for the cost.
 
 :::warning
-Model graders are variable between runs. Individual scores may differ, but average trends across a full dataset are stable enough for prompt comparison. Never draw conclusions from a single test case score.
+Model graders are variable between runs. Individual scores may differ, but average trends across a full dataset are consistent for prompt comparison. Never draw conclusions from a single test case score.
 :::
 
 ## Code-Based Grading
 
-Code graders use programmatic checks for objective criteria: valid syntax, correct format, presence of required elements. They are deterministic, fast, and free.
+Code graders use programmatic checks for objective criteria: valid syntax, correct format, presence of required elements. They are deterministic and fast.
 
 ```python
 import ast
@@ -366,7 +366,7 @@ for label, prompt in [("v1", prompt_v1), ("v2", prompt_v2), ("v3", prompt_v3)]:
     run_eval(dataset, prompt)
 ```
 
-A prompt that scores higher on average across your dataset is objectively better. This is the basis for confident, data-driven prompt development.
+A prompt that scores higher on average across your dataset is better. This is empirical prompt development.
 
 ## Quick Reference
 

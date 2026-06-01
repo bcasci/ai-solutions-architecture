@@ -6,7 +6,7 @@ order: 1
 tags: ["agents", "orchestration", "agent-loops", "tool-use", "parallelization"]
 lastVerified: "2026-06-01"
 ---
-Most tasks that feel like they need an "agent" actually need a workflow. This page covers both approaches — structured orchestration patterns (chaining, parallelization, routing) and true agentic loops — so you can pick the right one and avoid over-engineering.
+Most tasks labeled "agent" work better as workflows. This page covers both approaches — structured orchestration patterns (chaining, parallelization, routing) and true agentic loops — so you can pick the right one and avoid over-engineering.
 
 ## Workflows vs Agents
 
@@ -19,7 +19,7 @@ Two strategies exist for tasks that require multiple Claude calls:
 | **Strengths** | Higher accuracy, predictable, easier to test | Flexible, handles novel situations |
 | **Weaknesses** | Less flexible, more upfront design | Lower completion rate, harder to evaluate |
 
-**Default to workflows for production applications.** Reliability and predictability matter more to users than architectural elegance. Only reach for agents when requirements genuinely cannot be predetermined.
+**Default to workflows for production applications.** Workflows are more reliable and predictable. Only reach for agents when requirements genuinely cannot be predetermined.
 
 ## Orchestration Patterns
 
@@ -58,7 +58,7 @@ result = chain(
 print(result)
 ```
 
-Chaining solves the **long-prompt problem**: when a single prompt includes many constraints, Claude will often violate some of them. A two-step chain — generate first, then fix violations — consistently outperforms a single complex prompt.
+Chaining solves the **long-prompt problem**: when a single prompt includes many constraints, Claude will often violate some of them. A two-step chain — generate first, then fix violations — often beats a single complex prompt.
 
 You can also insert non-LLM processing between steps (API calls, rendering, database writes).
 
@@ -138,7 +138,7 @@ def route_and_handle(user_message: str) -> str:
 print(route_and_handle("I was charged twice for my subscription this month"))
 ```
 
-Each route gets a prompt optimized for that category — significantly better quality than one generic prompt handling everything.
+Each route gets a prompt optimized for that category — better than one generic prompt.
 
 :::tip
 You can combine these patterns. A routing step can dispatch to a chain, which itself uses parallelization internally. Start simple and compose as needed.
@@ -214,13 +214,13 @@ Always set a maximum iteration limit on agentic loops. A runaway loop burns toke
 
 ## Tool Design for Agents
 
-The power of agents comes from Claude's ability to combine simple tools in unexpected ways. The key principle: **tools should be abstract, not hyper-specialized.**
+Agents gain flexibility from tool composition. The key principle: **tools should be abstract, not hyper-specialized.**
 
-Claude Code demonstrates this perfectly. Its tool set is `bash`, `read`, `write`, `edit`, `glob`, `grep` — not "refactor code" or "install dependencies." These generic tools let Claude handle scenarios the developers never explicitly planned for.
+Claude Code demonstrates this. Its tool set is `bash`, `read`, `write`, `edit`, `glob`, `grep` — not "refactor code" or "install dependencies." These generic tools let Claude handle scenarios the developers never explicitly planned for.
 
 When designing tools for your agent:
 
-- **Keep tools generic and composable.** A `run_sql_query` tool is more powerful than separate `get_user`, `update_user`, `delete_user` tools.
+- **Keep tools generic and composable.** A `run_sql_query` tool is more composable than separate `get_user`, `update_user`, `delete_user` tools.
 - **Write descriptive tool descriptions.** The description is Claude's only interface for understanding what a tool does and when to use it.
 - **Return errors as values, not exceptions.** Claude can read and react to descriptive error messages — `"Doc with id report.pdf not found"` helps it recover.
 

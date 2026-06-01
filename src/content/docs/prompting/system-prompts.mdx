@@ -6,7 +6,7 @@ order: 1
 tags: ["system-prompts", "prompt-engineering", "prompts", "messages-api"]
 lastVerified: "2026-06-01"
 ---
-System prompts define how Claude behaves. Prompt design techniques control the quality of what it produces. Together, they determine whether you get usable output or a wall of generic text. This page covers the mechanics of system prompts and four high-impact prompt engineering techniques.
+System prompts define how Claude behaves. Prompt design techniques control the quality of what it produces. Together, they control output quality. This page covers the mechanics of system prompts and four high-impact prompt engineering techniques.
 
 ## System Prompt Mechanics
 
@@ -29,7 +29,7 @@ message = client.messages.create(
 print(message.content[0].text)
 ```
 
-Without a system prompt, Claude defaults to generic helpful assistant behavior. Even a single sentence dramatically changes output style.
+Without a system prompt, Claude defaults to generic helpful assistant behavior. Even one sentence changes output.
 
 ### Conditional System Prompts in Helper Functions
 
@@ -61,7 +61,7 @@ Use simple language — assume no prior calculus knowledge.
 When a student is stuck, ask a leading question rather than explaining.
 ```
 
-The more specific your constraints, the more consistent the output. Vague prompts like "Be helpful" give Claude maximum degrees of freedom — and maximum variability.
+The more specific your constraints, the more consistent the output. Vague prompts like "Be helpful" give Claude wide latitude — and inconsistent output.
 
 ## Be Clear and Direct
 
@@ -139,7 +139,7 @@ message = client.messages.create(
 )
 ```
 
-Use descriptive tag names: `<sales_records>` beats `<data>`, `<my_code>` beats `<input>`. The tag name communicates purpose to both Claude and human readers.
+Use descriptive tag names: `<sales_records>` over `<data>`, `<my_code>` beats `<input>`. The tag name communicates purpose to both Claude and human readers.
 
 XML tags are most valuable when:
 - Mixing content types (code + docs + instructions)
