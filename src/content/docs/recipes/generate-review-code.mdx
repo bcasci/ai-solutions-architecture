@@ -6,7 +6,7 @@ order: 4
 tags: ["code-generation", "code-review", "two-pass", "evaluation"]
 lastVerified: "2026-06-01"
 ---
-Generate code from a specification, then immediately review it with a second Claude call. This two-pass pattern catches bugs, security issues, and edge cases that a single generation pass often misses.
+Generate code from a specification, then immediately review it with a second Claude call. This two-pass pattern catches bugs, security issues, and edge cases that a single generation pass misses.
 
 ## The Script
 
@@ -110,13 +110,13 @@ if __name__ == "__main__":
 
 ## How It Works
 
-1. **Pass 1 (Generate)** — Claude writes code from a spec. The system prompt demands production-quality output with type hints and error handling.
+1. **Pass 1 (Generate)** — Claude writes code from a spec. The system prompt specifies type hints and error handling.
 2. **Pass 2 (Review)** — a separate Claude call reviews the generated code against the original spec. The reviewer returns structured JSON with severity-rated issues and specific fixes.
 
 The key insight: the reviewer has both the spec and the code, so it can catch spec deviations that the generator might introduce. Using separate system prompts for each pass prevents the model from being biased toward its own output.
 
 :::tip
-Extend this into a loop: if the review verdict is `needs_changes`, feed the issues back to the generator for a revision pass. Two iterations usually resolve all critical issues.
+Extend this into a loop: if the review verdict is `needs_changes`, feed the issues back to the generator for a revision pass. Two iterations usually suffice.
 :::
 
 :::warning

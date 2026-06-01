@@ -6,7 +6,7 @@ order: 2
 tags: ["claude-code", "hooks", "ci-cd", "safety"]
 lastVerified: "2026-06-01"
 ---
-Hooks let you run commands before or after Claude Code executes a tool — intercepting the tool pipeline to enforce rules, automate quality checks, and integrate with external systems. Combined with GitHub Actions integration, hooks turn Claude Code from an interactive assistant into an automated development workflow.
+Hooks let you run commands before or after Claude Code executes a tool — enforcing rules, automating quality checks, and integrating with external systems. Combined with GitHub Actions integration, hooks turn Claude Code from an interactive assistant into an automated development workflow.
 
 ## How Hooks Work
 
@@ -169,7 +169,7 @@ Catch type errors immediately — Claude receives compiler output and self-corre
 }
 ```
 
-This is particularly effective when Claude updates a function signature but misses call sites in other files. The type errors feed back into Claude's context, prompting it to fix the remaining references.
+This catches cases where Claude updates a function signature but misses call sites in other files. The type errors feed back into Claude's context, prompting it to fix the remaining references.
 
 ### AI-Reviews-AI
 
@@ -184,7 +184,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 // Feed findings back to the original Claude via stdout
 ```
 
-This pattern is powerful for critical directories (query files, API definitions) but adds latency and API cost. Scope it narrowly — only monitor high-value directories.
+This works well for critical directories (query files, API definitions) but adds latency and API cost. Scope it narrowly — only monitor high-value directories.
 
 :::tip
 Start with lightweight hooks (formatting, linting) before adding heavier ones (separate Claude instances). Every hook adds latency to tool calls.

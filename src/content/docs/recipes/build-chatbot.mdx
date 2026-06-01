@@ -6,7 +6,7 @@ order: 2
 tags: ["chatbot", "multi-turn", "conversation", "streaming"]
 lastVerified: "2026-06-01"
 ---
-A fully working terminal chatbot that maintains conversation history across turns and streams responses in real time. Copy, paste, run.
+A terminal chatbot that maintains conversation history across turns and streams responses in real time. Copy, paste, run.
 
 ## The Script
 
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
 1. **Message history** lives in a list that grows with each turn. Both user and assistant messages get appended, giving Claude full conversational context.
 2. **Streaming** uses `client.messages.stream()` so text appears token-by-token in the terminal instead of waiting for the full response.
-3. **History trimming** kicks in after 40 messages, keeping the last 30. This prevents context window overflow on long conversations.
+3. **History trimming** kicks in after 40 messages, keeping the last 30. This prevents context window overflow.
 4. **Clean exit** handles `Ctrl+C`, `EOF`, and text commands gracefully.
 
 :::tip

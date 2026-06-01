@@ -6,11 +6,11 @@ order: 3
 tags: ["claude-code", "skills-authoring", "agent-sdk"]
 lastVerified: "2026-06-01"
 ---
-Skills are folders of instructions that Claude Code discovers and loads on demand. Unlike CLAUDE.md (always loaded) or slash commands (manually invoked), skills activate automatically when Claude recognizes your request matches a skill's description. The Agent SDK lets you run the same Claude Code agent loop from TypeScript or Python scripts, enabling batch automation and CI/CD integration.
+Unlike CLAUDE.md (always loaded) or slash commands (manually invoked), skills activate automatically when Claude recognizes your request matches a skill's description. The Agent SDK lets you run the same Claude Code agent loop from TypeScript or Python scripts, enabling batch automation and CI/CD integration.
 
 ## Skills vs. Other Customization
 
-Claude Code has five customization mechanisms. Choosing the right one matters:
+Claude Code has five customization mechanisms. Choose based on how the content should load:
 
 | Mechanism | Loading | Scope | Best For |
 | --- | --- | --- | --- |
@@ -20,7 +20,7 @@ Claude Code has five customization mechanisms. Choosing the right one matters:
 | [Hooks](/claude-code/hooks) | Event-driven (tool calls) | Automation | Formatting, testing, access control |
 | [MCP servers](/mcp/mcp) | Always available | External integrations | Databases, browsers, APIs |
 
-If you find yourself explaining the same thing to Claude repeatedly, that's a skill waiting to be written. If it should apply to every conversation, put it in CLAUDE.md instead.
+If it should apply to every conversation, put it in CLAUDE.md instead.
 
 ## Creating a Skill
 
@@ -60,7 +60,7 @@ The directory name must match the `name` field. Save the file as `SKILL.md` (cas
 
 Claude loads only skill names and descriptions at startup — no context window cost until activation. When you send a message, Claude compares it against all available descriptions via semantic matching. If a match is found, Claude prompts you to confirm before loading the full skill content.
 
-The `description` field is the most important part. Write it to enumerate concrete trigger phrases that match how you actually phrase requests:
+Write the `description` to enumerate concrete trigger phrases that match how you actually phrase requests:
 
 ```yaml
 # Weak — too vague for reliable matching
@@ -203,7 +203,7 @@ Note that `Skill` must appear in the `tools` list to enable skill usage. Built-i
 
 ## The Claude Code Agent SDK
 
-The Agent SDK (`@anthropic-ai/claude-agent-sdk`) runs Claude Code's agent loop programmatically. Same tools, same file access, same hooks — under your script's control.
+The Agent SDK (`@anthropic-ai/claude-agent-sdk`) runs Claude Code's agent loop programmatically. Same tools, file access, and hooks — under your script's control.
 
 ### TypeScript
 
@@ -265,7 +265,7 @@ async def analyze_codebase():
 asyncio.run(analyze_codebase())
 ```
 
-The SDK returns an async iterable of messages — the same conversation events as the CLI (tool calls, tool results, assistant text). Process them progressively rather than waiting for completion.
+The SDK returns an async iterable of messages — the same events as the CLI. Process them progressively rather than waiting for completion.
 
 :::warning
 The package name is `@anthropic-ai/claude-agent-sdk` (TypeScript) or `claude-agent-sdk` (Python). The CLI package `@anthropic-ai/claude-code` cannot be imported as a library — it is not the SDK.

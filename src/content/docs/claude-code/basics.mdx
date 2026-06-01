@@ -37,7 +37,7 @@ Run `claude` from your project's root directory. Claude Code uses the working di
 
 ## Context Management with CLAUDE.md
 
-Context is the single biggest lever for Claude Code quality. Too little context and Claude guesses wrong. Too much irrelevant context and Claude gets confused. `CLAUDE.md` files solve this by providing persistent project knowledge across sessions.
+Context is the main lever for Claude Code quality. Too little context and Claude guesses wrong. Too much irrelevant context and Claude gets confused. `CLAUDE.md` files solve this by providing persistent project knowledge across sessions.
 
 ### The /init Command
 
@@ -93,7 +93,7 @@ The `#` shortcut for adding memories shown in older videos and tutorials has bee
 
 ### The Three-Phase Workflow
 
-For non-trivial tasks, this sequence consistently produces better results than a single prompt:
+For non-trivial tasks, this sequence produces better results than a single prompt:
 
 1. **Feed context** — Ask Claude to read the relevant files first
 2. **Plan** — Ask Claude to plan the implementation (explicitly say "don't write code yet")
@@ -122,7 +122,7 @@ For high-confidence changes, let tests drive the implementation:
 3. Have Claude implement the tests you approve
 4. Ask Claude to write code that passes the tests
 
-This works because Claude has clear success criteria before writing any production code.
+This works because Claude has clear success criteria before writing code.
 
 ### Planning Mode and Effort
 

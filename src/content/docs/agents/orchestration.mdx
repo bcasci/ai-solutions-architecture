@@ -112,7 +112,7 @@ Use [structured output](/prompting/structured-output) for the classification ste
 
 Routing works best when:
 - Different request types need fundamentally different handling
-- Response quality improves significantly with specialized context
+- Response quality improves with specialized context
 - Categories are reliably distinguishable by Claude
 
 Routing adds one extra API call for classification. Use it when the quality improvement from specialization outweighs that cost.
@@ -181,7 +181,7 @@ print(final)
 
 When a prompt includes many constraints, Claude will often violate some of them -- even when clearly stated. This is a known failure mode, not a one-off bug.
 
-The two-step solution: generate first (accepting some violations), then pass the output to a dedicated revision prompt that focuses solely on checking and fixing those violations. This consistently outperforms trying to get everything right in a single call.
+The two-step solution: generate first (accepting some violations), then pass the output to a dedicated revision prompt that focuses solely on checking and fixing those violations. This outperforms trying to get everything right in a single call.
 
 ### Non-LLM Steps in the Chain
 

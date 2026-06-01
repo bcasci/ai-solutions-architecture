@@ -6,7 +6,7 @@ order: 3
 tags: ["rate-limits", "scaling", "production", "api-basics"]
 lastVerified: "2026-06-01"
 ---
-Anthropic enforces rate limits to ensure fair access and platform stability. You hit three types of limits: requests per minute (RPM), input tokens per minute (ITPM), and output tokens per minute (OTPM). Understanding these limits — and designing around them — is the difference between a smooth production launch and a flood of 429 errors.
+Anthropic enforces rate limits to ensure fair access and platform stability. You hit three types of limits: requests per minute (RPM), input tokens per minute (ITPM), and output tokens per minute (OTPM). Understanding these limits — and designing around them — prevents a flood of 429 errors.
 
 ## Rate Limit Types
 
@@ -189,7 +189,7 @@ flowchart TD
     B -->|Hardest: research, multi-step| E[Claude Opus — lower limits, higher cost]
 ```
 
-Haiku has significantly higher rate limits than Opus at every tier. Routing simple tasks to Haiku preserves your Sonnet/Opus quota for requests that need it.
+Haiku has higher rate limits than Opus at every tier. Routing simple tasks to Haiku preserves your Sonnet/Opus quota for requests that need it.
 
 ### 5. Request Higher Limits
 

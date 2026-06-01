@@ -6,7 +6,7 @@ order: 5
 tags: ["extraction", "vision", "pdf", "files-api", "code-execution", "structured-output"]
 lastVerified: "2026-06-01"
 ---
-Claude can read images, parse PDFs, and execute code against uploaded files. This page covers the practical patterns for extracting structured data from unstructured inputs and building data transformation pipelines.
+Claude can read images, parse PDFs, and execute code against uploaded files. This page covers the patterns for extracting structured data from unstructured inputs and building data transformation pipelines.
 
 ## Extracting Data from Images
 
@@ -110,11 +110,11 @@ For any field not visible in the image, use null."""
 result = extract_from_image("invoice.png", structured_prompt)
 ```
 
-Breaking complex extraction into numbered steps with specific criteria consistently outperforms vague prompts.
+Breaking complex extraction into numbered steps with specific criteria outperforms vague prompts.
 
 ## Extracting Data from PDFs
 
-PDF processing uses nearly identical code to images. The key differences: block type is `"document"`, media type is `"application/pdf"`.
+PDF processing uses the same code structure as images. The key differences: block type is `"document"`, media type is `"application/pdf"`.
 
 ```python
 import base64
@@ -204,7 +204,7 @@ for block in result.content:
     print(block)
 ```
 
-Citations are essential for document processing applications where users need to verify extracted data against the source.
+Citations let users verify extracted data against the source.
 
 ## The Files API and Code Execution
 
@@ -272,7 +272,7 @@ The Files API is the only way to get data into and out of the code execution con
 
 ## Building a Transformation Pipeline
 
-Combine extraction and code execution to build end-to-end data transformation pipelines:
+Combine extraction and code execution into a transformation pipeline:
 
 ```python
 import anthropic

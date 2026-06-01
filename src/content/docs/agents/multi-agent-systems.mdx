@@ -6,7 +6,7 @@ order: 3
 tags: ["agents", "orchestration", "multi-agent", "mcp", "agent-sdk"]
 lastVerified: "2026-06-01"
 ---
-A single agent with the right tools handles most tasks. But some problems — code review pipelines, multi-domain analysis, parallel research — benefit from splitting work across multiple specialized agents. This page covers multi-agent architectures, when they're worth the complexity, and how to build them with both the Messages API and the managed agents API.
+A single agent with the right tools handles most tasks. But some problems — code review pipelines, multi-domain analysis, parallel research — benefit from splitting work across multiple specialized agents. This page covers when multi-agent is worth the complexity and how to build it with both the Messages API and the managed agents API.
 
 ## When to Use Multi-Agent
 
@@ -186,7 +186,7 @@ graph LR
     MCP --> API[External API]
 ```
 
-This is powerful for teams building agent systems: one MCP server wraps your internal APIs, and every agent — regardless of who built it — gets the same tool interface. See [MCP](/mcp/mcp) for building servers and clients.
+This works well for teams building agent systems: one MCP server wraps your internal APIs, and every agent — regardless of who built it — gets the same tool interface. See [MCP](/mcp/mcp) for building servers and clients.
 
 The key advantage over hardcoded tool definitions: when you update the MCP server, every connected agent picks up the changes on the next `list_tools()` call. No code changes in any agent.
 
@@ -265,7 +265,7 @@ Key behaviors:
 - Built-in agents (Explorer, Plan, Verify) cannot use skills — only custom subagents support the `skills` field
 - The Claude Code SDK (`@anthropic-ai/claude-agent-sdk`) enables launching subagents programmatically from hooks or scripts
 
-The AI-reviews-AI pattern — where a hook launches a separate Claude instance to review the first Claude's work — is a practical multi-agent pattern that runs inside your development workflow.
+The AI-reviews-AI pattern — where a hook launches a separate Claude instance to review the first Claude's work — runs inside your development workflow.
 
 :::warning
 Subagents do not inherit skills from the parent conversation. If your worker needs a skill, you must list it in the agent's frontmatter. This catches most people off guard.

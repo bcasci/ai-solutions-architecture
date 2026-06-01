@@ -94,8 +94,8 @@ python analyze_csv.py sales_data.csv "Which region had the highest growth rate?"
 
 ## How It Works
 
-1. **Load and sample** — the CSV is read in full but truncated to 200 rows if it exceeds that. Sampling is evenly spaced (not just the first N rows) to capture data across the full range.
-2. **Context framing** — the system prompt tells Claude to act as a data analyst and ground its answers in actual numbers. If the data is sampled, Claude is told explicitly.
+1. **Load and sample** — the CSV is truncated to 200 rows if it exceeds that. Sampling is evenly spaced (not just the first N rows) to capture data across the full range.
+2. **Context framing** — the system prompt tells Claude to ground its answers in actual numbers. If the data is sampled, Claude is told explicitly.
 3. **Flexible questions** — pass a specific question as a CLI argument, or omit it for a general analysis.
 
 :::tip

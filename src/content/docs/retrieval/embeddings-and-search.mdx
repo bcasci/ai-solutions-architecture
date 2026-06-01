@@ -46,7 +46,7 @@ Switching embedding models requires re-embedding all your chunks. Different mode
 | [Cohere](https://docs.cohere.com/docs/embeddings) | `embed-v4.0` | 1024 | Search-optimized, multilingual |
 | [Google](https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings) | `text-embedding-005` | 768 | Via Vertex AI |
 
-VoyageAI is recommended by Anthropic for use with Claude. Any provider works — pick based on your latency, cost, and language requirements.
+Any provider works — pick based on your latency, cost, and language requirements.
 
 ## Vector Search
 
@@ -149,7 +149,7 @@ bm25_results = bm25_index.search(query_text, k=5)
 merged = reciprocal_rank_fusion([vector_results, bm25_results])
 ```
 
-RRF normalizes across scoring scales — vector search returns cosine similarity while BM25 returns term frequency scores. By using rank positions instead of raw scores, RRF merges them fairly. Documents that rank highly in both systems rise to the top.
+RRF normalizes across scoring scales — vector search returns cosine similarity while BM25 returns term frequency scores. By using rank positions instead of raw scores, RRF merges them without scale bias. Documents that rank highly in both systems rise to the top.
 
 The architecture is extensible. Any search index that returns ranked results can be added as another input to the fusion function — keyword-based, graph-based, or domain-specific indexes all plug in the same way.
 

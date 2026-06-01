@@ -6,7 +6,7 @@ order: 2
 tags: ["architecture", "decision-making", "strategy", "api", "claude-code", "agent-sdk"]
 lastVerified: "2026-06-01"
 ---
-Most over-engineering happens before a single line of code is written. Teams reach for agents when a prompt would do, build RAG when the document fits in context, or add orchestration layers that only slow things down. This page helps you make the right architectural decisions upfront.
+Over-engineering happens before a single line of code is written. Teams reach for agents when a prompt would do, build RAG when the document fits in context, or add orchestration layers that only slow things down. This page helps you make the right architectural decisions upfront.
 
 ## Pick Your Starting Point
 
@@ -28,7 +28,7 @@ Start at the simplest level that works. Move up only when you hit a specific lim
 
 ### Level 1: Single Prompt
 
-One API call, one response. This covers more than you think — summarization, classification, extraction, code generation, Q&A, and even multi-step reasoning.
+One API call, one response. This covers summarization, classification, extraction, code generation, Q&A, and even multi-step reasoning.
 
 You can structure a workflow *inside* the prompt itself:
 
@@ -63,7 +63,7 @@ Four building blocks you can combine freely:
 | **[Parallelize](/agents/orchestration#parallelization-independent-sub-tasks)** | Run independent subtasks concurrently, aggregate | Subtasks don't need each other's output |
 | **[Evaluator-Optimizer](/agents/orchestration#evaluator-optimizer-iterative-refinement)** | Generate, evaluate, loop until quality threshold met | Output quality varies and needs iterative refinement |
 
-These are **composable tools in a toolbox**, not a ladder. A router can dispatch to chains. A chain step can parallelize internally. Pick whichever ones apply.
+These are **composable**, not a ladder. A router can dispatch to chains. A chain step can parallelize internally. Pick whichever ones apply.
 
 ### Level 3: Agent Loop
 

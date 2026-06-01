@@ -133,7 +133,7 @@ message = client.messages.create(
 print(message.content[0].text)
 ```
 
-Claude extracts text, embedded images, tables, and document structure from PDFs. Large PDFs consume significant tokens — send only the pages you need when possible.
+Claude extracts text, embedded images, tables, and document structure from PDFs. Large PDFs consume many tokens — send only the pages you need when possible.
 
 :::warning
 The only differences from image code are `type: "document"`, `media_type: "application/pdf"`, and the variable name. Easy to copy-paste incorrectly.
@@ -141,7 +141,7 @@ The only differences from image code are `type: "document"`, `media_type: "appli
 
 ## Citations
 
-Citations let Claude reference specific parts of source documents, showing users exactly where each claim comes from. Enable them by adding `title` and `citations` fields to the document block.
+Citations let Claude reference specific parts of source documents. Enable them by adding `title` and `citations` fields to the document block.
 
 ```python
 import base64

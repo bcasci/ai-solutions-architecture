@@ -6,7 +6,7 @@ order: 5
 tags: ["monitoring", "production", "cost", "error-handling", "messages-api"]
 lastVerified: "2026-06-01"
 ---
-Every API response from Claude includes usage data, timing information, and request identifiers. Production systems should capture all of it. This page covers what to log, how to track costs, and how to build dashboards that surface problems before users notice them.
+Every API response from Claude includes usage data, timing information, and request identifiers. Production systems should capture all of it. This page covers what to log, how to track costs, and how to build dashboards that surface problems early.
 
 ## The Usage Object
 
@@ -39,7 +39,7 @@ The full usage breakdown:
 | `cache_creation_input_tokens` | Tokens written to cache on this request |
 | `cache_read_input_tokens` | Tokens served from cache (90% cost reduction) |
 
-Total input tokens billed = `input_tokens` + `cache_creation_input_tokens` + `cache_read_input_tokens`. Token counts won't match your visible content exactly — the API transforms requests internally before they reach the model.
+Total input tokens billed = `input_tokens` + `cache_creation_input_tokens` + `cache_read_input_tokens`. Token counts won't match your visible content exactly.
 
 ## Structured Request Logging
 

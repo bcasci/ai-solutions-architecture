@@ -91,7 +91,7 @@ result = json.loads(message.content[0].text)
 print(json.dumps(result, indent=2))
 ```
 
-Claude's output is guaranteed to conform to the provided JSON schema. This is the most reliable approach for structured extraction at scale.
+Claude's output is guaranteed to conform to the provided JSON schema. This is the cleanest approach for structured extraction.
 
 ## Technique 3: Tool-Use Coercion
 
@@ -152,7 +152,7 @@ Combine structured output with a [system prompt](/prompting/system-prompts) for 
 
 ## Parsing and Validation
 
-Regardless of technique, always validate the output:
+Always validate the output:
 
 ```python
 import json

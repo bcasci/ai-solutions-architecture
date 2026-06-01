@@ -94,7 +94,7 @@ if __name__ == "__main__":
 ## How It Works
 
 1. **Short docs** go straight to Claude with the summarization system prompt.
-2. **Long docs** get split at paragraph boundaries into chunks under 80k characters. Each chunk is summarized independently, then a final call merges the partial summaries into one cohesive output.
+2. **Long docs** get split at paragraph boundaries into chunks under 80k characters. Each chunk is summarized independently, then a final call merges them.
 
 The system prompt forces structured output (TL;DR, Key Points, Details) so every summary has a consistent format you can parse or display.
 

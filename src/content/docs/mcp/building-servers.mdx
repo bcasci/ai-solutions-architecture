@@ -14,7 +14,7 @@ If you're new to how tools work at the protocol level, read [Tool Use](/the-api/
 
 ## Python Server with FastMCP
 
-The Python SDK provides `FastMCP`, which turns decorated functions into MCP-compatible tools. Type hints become JSON schema automatically.
+The Python SDK provides `FastMCP`, which turns decorated functions into MCP-compatible tools. Type hints become JSON schema.
 
 ```bash
 pip install mcp pydantic
@@ -41,7 +41,7 @@ def check_stock(
     return {"sku": sku, "quantity": qty, "low_stock": qty < 10}
 ```
 
-Compare this to [direct tool definitions](/the-api/tool-use#defining-tools) where you write JSON schema by hand. MCP generates the schema from type hints — less boilerplate, same result at the protocol level.
+Compare this to [direct tool definitions](/the-api/tool-use#defining-tools) where you write JSON schema by hand. MCP generates the schema from type hints — less boilerplate, same result.
 
 ## TypeScript Server
 
@@ -104,7 +104,7 @@ MCP tools follow the same design principles as [direct tool definitions](/the-ap
 
 ### Write descriptive tool metadata
 
-Claude discovers MCP tools at runtime via `list_tools()`. Unlike direct tools where you control the prompt context, MCP tools must be self-describing — Claude has no other information about what they do.
+Claude discovers MCP tools at runtime via `list_tools()`. Unlike direct tools where you control the prompt context, MCP tools must be self-describing — Claude has no additional context about what they do.
 
 ```python
 # Bad — Claude won't know when to use this

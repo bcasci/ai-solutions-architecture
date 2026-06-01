@@ -6,11 +6,11 @@ order: 1
 tags: ["cost", "context-management", "messages-api", "prompt-caching", "batch-api"]
 lastVerified: "2026-06-01"
 ---
-Claude charges per token — input and output. On high-volume applications, costs add up fast. Prompt caching, batch processing, and smart request design can cut your bill by 50-90% depending on your usage patterns. This page covers the mechanics and when each strategy pays off.
+Claude charges per token — input and output. On high-volume applications, costs add up fast. Prompt caching, batch processing, and smart request design can cut your bill by 50-90%. This page covers the mechanics and when each strategy pays off.
 
 ## How Prompt Caching Works
 
-Every API request triggers preprocessing: tokenization, embedding, context analysis. Without caching, Claude discards all that work after responding. On the next request with the same content, it repeats everything from scratch.
+Every API request triggers preprocessing: tokenization, embedding, context analysis. Without caching, Claude discards all that work after responding. On the next request with the same content, it repeats everything.
 
 Prompt caching saves the preprocessing results so subsequent requests with identical content skip directly to generation.
 
@@ -77,7 +77,7 @@ You must use the expanded block format (object with `type`, `text`, `cache_contr
 
 ## Caching Tool Definitions
 
-Tool schemas are prime caching candidates — they rarely change between requests and can be large.
+Tool schemas are caching candidates — they rarely change between requests and can be large.
 
 ```python
 tools = [
@@ -179,7 +179,7 @@ print(f"Batch ID: {batch.id}")
 print(f"Status: {batch.processing_status}")
 ```
 
-Batch processing returns results within 24 hours (typically much faster). Use it for evaluations, bulk classification, data extraction, and any non-interactive workload.
+Batch processing returns results within 24 hours (often faster). Use it for evaluations, bulk classification, data extraction, and any non-interactive workload.
 
 ## Token Efficiency Strategies
 

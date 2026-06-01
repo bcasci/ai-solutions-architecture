@@ -230,7 +230,7 @@ Once configured, Claude Code discovers tools from all connected servers. You can
 > /mcp
 ```
 
-This lists all connected servers and their tools. Claude Code then uses these tools alongside its built-in tools (`Read`, `Edit`, `Bash`, etc.) — no special syntax needed. Ask Claude Code to "check inventory for WIDGET-001" and it routes to your MCP server automatically.
+This lists all connected servers and their tools. Claude Code then uses these tools alongside its built-in tools (`Read`, `Edit`, `Bash`, etc.) — no special syntax needed. Ask Claude Code to "check inventory for WIDGET-001" and it routes to your MCP server.
 
 ### Pre-built servers
 
@@ -289,7 +289,7 @@ If you have an existing app with [direct tool definitions](/the-api/tool-use), m
 3. **Replace your dispatcher** with `session.call_tool()`
 4. **Replace your hardcoded tool list** with `session.list_tools()`
 
-The Claude API calls stay the same. You're swapping how tools are defined and executed, not the conversation protocol.
+The Claude API calls stay the same.
 
 ## Related
 

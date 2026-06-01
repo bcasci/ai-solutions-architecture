@@ -131,7 +131,7 @@ Put your most critical rules at the top of the system prompt and at the end. Cla
 
 ## Output Validation
 
-Even with good guardrails, validate what comes back. Claude can occasionally drift outside intended boundaries.
+Even with good guardrails, validate what comes back. Claude occasionally drifts outside intended boundaries.
 
 ```python
 from anthropic import Anthropic
@@ -221,7 +221,7 @@ else:
     print(f"Blocked: {result['categories']} — {result['reason']}")
 ```
 
-This approach adds latency (two API calls) but provides structured, explainable moderation decisions. Use Haiku for the moderation call to minimize cost and latency.
+This adds latency (two API calls) but provides structured moderation decisions. Use Haiku for the moderation call to minimize cost and latency.
 
 ## Structured Output for Safety
 
