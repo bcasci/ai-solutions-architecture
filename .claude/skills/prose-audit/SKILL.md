@@ -30,9 +30,11 @@ Run this after content-evaluation scores a page, or after a batch of pages have 
 3. **Two-pass scan:**
    - **Pass 1 — Sentence-level:** Flag whole-sentence issues: redundant summaries, paragraphs that restate code, heading-first-sentence duplication.
    - **Pass 2 — Intra-sentence:** Re-read each prose line looking for filler *within* otherwise-good sentences: unnecessary adjectives ("high-level", "simple", "complete"), padding phrases ("from scratch", "in isolation", "the growing ecosystem of"), and hedges that don't earn their place. These are easy to miss on the first pass because the sentence reads fine — but it reads *tighter* without them.
-4. **Flag issues** using the pattern categories below. Record the file path, line number, the problematic text, and the recommended fix (replacement or deletion).
-5. **Output the audit** in the format below.
-6. **Do NOT apply edits automatically.** Present the findings for review first. Edits are applied in a separate step after the user approves.
+4. **Context check:** For each flagged issue, verify the word/phrase is actually noise in context. A word is filler only if removing it loses nothing the reader doesn't already have from the surrounding sentence, heading, or code. Check: is this word establishing a definition? Setting up a contrast with evidence in the next paragraph? Providing a specific number/example? If so, don't flag it.
+5. **Flag issues** using the pattern categories below. Record the file path, line number, the problematic text, and the recommended fix (replacement or deletion).
+6. **Calibrate before output.** Review the full findings list and ask: "Would applying ALL of these make the page better, or would some make it robotic?" Demote borderline cases to a separate "Borderline" section below the main findings table. A clean page should have few findings — don't invent issues to fill the report.
+7. **Output the audit** in the format below.
+8. **Do NOT apply edits automatically.** Present the findings for review first. Edits are applied in a separate step after the user approves.
 
 ## Pattern Categories
 
@@ -71,7 +73,9 @@ Hedges that don't distinguish common from edge cases.
 
 ### Unsubstantiated Claims
 
-Superlatives and absolutes without evidence. Downgrade or delete.
+Superlatives and absolutes without evidence. Downgrade or delete. Two levels:
+
+**Word-level** — adjectives/adverbs that inflate:
 
 | Pattern                                | Example                       | Fix                                  |
 | -------------------------------------- | ----------------------------- | ------------------------------------ |
@@ -82,6 +86,15 @@ Superlatives and absolutes without evidence. Downgrade or delete.
 | "the best/the most"                    | "the best approach"           | "a strong approach" or justify       |
 | "every major"                          | "every major pattern"         | "patterns from across"               |
 | "consistently outperforms"             | —                             | "often beats" unless benchmarked     |
+
+**Sentence-level** — whole sentences that overclaim without evidence:
+
+| Pattern | Example | Fix |
+| --- | --- | --- |
+| "X matters more than Y" (opinion as fact) | "Reliability matters more than elegance" | "Workflows are more reliable" (state the fact, not the value judgment) |
+| "pays for itself" / "ship with confidence" | Marketing language in technical content | Rewrite with the concrete benefit: "catches regressions before users do" |
+| "the first time you..." (anecdotal) | "pays for itself the first time you catch a bug" | Cut the anecdote, state the benefit directly |
+| "X is the basis for Y" (grandiose framing) | "This is the basis for confident prompt development" | "This is empirical prompt development" |
 
 ### Redundancy
 
@@ -137,7 +150,10 @@ After the user reviews the audit, apply approved edits using the Edit tool. Work
 
 - **Don't over-trim.** Informal voice is a feature. "Dead silence" and "scratch paper" are personality, not filler.
 - **Don't flag technical hedges.** "This may fail if the server is unreachable" is a real caveat, not noise.
+- **Don't flag definitions or setup sentences.** "X is a standard communication layer" is a definition, not a claim. Sentences that establish context for a code block or comparison table earn their place.
+- **Don't flag sentences backed by evidence on the same page.** If a claim like "most tasks need workflows" is followed by a comparison table with specifics, the claim is supported — don't flag it.
 - **Don't count code comments.** Only audit prose (paragraphs, callouts, list items, frontmatter descriptions).
 - **Context matters for "simple".** "Simple" is filler when describing something already shown to be simple. It's meaningful when contrasting: "Start with a simple approach before adding complexity."
 - **Don't flag the same pattern in code blocks.** Docstrings are fair game; inline code comments are not.
+- **Clean pages should stay clean.** If a page has strong prose, report that. Don't stretch to find issues — a report with 1-2 findings is a valid result. Over-flagging erodes trust in the audit.
 - **Line numbers shift after edits.** When presenting the audit, use the line numbers from the _original_ file. When applying edits, re-read the file first.
