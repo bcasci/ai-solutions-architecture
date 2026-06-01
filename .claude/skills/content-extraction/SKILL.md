@@ -33,6 +33,9 @@ Recommended approaches, dos/don'ts, architectural guidance. These are the highes
 ### Gotchas & Warnings
 Common mistakes, limitations, edge cases. Things a builder would hit and waste time on.
 
+### Diagrams & Images
+Analyze any diagrams, architecture visuals, flowcharts, or concept maps on the page. Describe what the diagram shows — the components, relationships, data flows, or decision paths. If the diagram contains information not covered in the page text, flag it as unique visual content. Save or reference the image source if possible.
+
 ### External References
 Links to docs, repos, tools, or other resources mentioned on the page.
 
@@ -72,6 +75,10 @@ _Demonstrates: [what this shows]_
 ### Gotchas & Warnings
 - [gotcha]
 
+### Diagrams & Images
+- [description of diagram: components, relationships, flows]
+- _Source: [image URL or screenshot reference]_
+
 ### External References
 - [description](url)
 
@@ -87,3 +94,5 @@ _Demonstrates: [what this shows]_
 - If a page is mostly filler, say so in Notes and rate importance accordingly.
 - If content references concepts from other pages, note the dependency in Notes.
 - If a topic tag doesn't exist for the content, propose a new one in Notes.
+- Skip video players — the page text covers their content.
+- DO analyze diagram images, architecture visuals, and concept maps — these often contain information not in the text.

@@ -130,7 +130,13 @@ URL structure supports this: `/patterns/rag/` (concept) → `/patterns/rag/claud
 4. For each lesson: capture the page content, then process through content-extraction skill
 5. Repeat until all lessons across all 3 courses are inventoried
 
-### Phase 2: Content Mapping (Plan Mode)
+#### Content Handling
+
+- **Videos:** Skip. The page text covers their content.
+- **Diagram images:** Analyze. Architecture visuals, flowcharts, and concept maps often contain information not in the text. Describe components, relationships, and flows.
+- **Parallelism:** Playwright browses pages sequentially (single browser). Content extraction processing can be parallelized via subagents after page capture.
+
+### Phase 2: Content Mapping
 
 - [ ] Map extracted content → site sections
 - [ ] Identify gaps (topics courses skip that builders need)
