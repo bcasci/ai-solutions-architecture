@@ -1,8 +1,8 @@
 ---
 title: "Streaming"
 description: "How to use the Claude streaming API for real-time progressive responses, including event handling and when streaming is the right choice."
-section: "foundations"
-order: 4
+section: "the-api"
+order: 3
 tags: ["streaming", "messages-api", "api-basics"]
 lastVerified: "2026-06-01"
 ---
@@ -66,7 +66,7 @@ const message = await stream.finalMessage();
 ```
 
 :::tip
-For [multi-turn conversations](/foundations/messages-api#multi-turn-conversations), call `stream.get_final_message()` (Python) or `stream.finalMessage()` (TypeScript) after streaming completes and append the result to your messages list. The assembled text is identical to what a non-streaming call returns.
+For [multi-turn conversations](/the-api/messages-api#multi-turn-conversations), call `stream.get_final_message()` (Python) or `stream.finalMessage()` (TypeScript) after streaming completes and append the result to your messages list. The assembled text is identical to what a non-streaming call returns.
 :::
 
 ## Raw Event Streaming
@@ -172,7 +172,7 @@ Streaming requires managing a context manager (`with` block in Python). The stre
 
 ## Related
 
-- [Messages API](/foundations/messages-api) — request structure and non-streaming responses
-- [Structured Output](/foundations/structured-output) — parsing structured data from responses
+- [Messages API](/the-api/messages-api) — request structure and non-streaming responses
+- [Structured Output](/prompting/structured-output) — parsing structured data from responses
 - [Error Handling](/production/error-handling) — retry strategies for failed streams
 - [Anthropic streaming documentation](https://docs.anthropic.com/en/api/streaming)

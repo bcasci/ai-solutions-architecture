@@ -1,8 +1,8 @@
 ---
 title: "Structured Output"
 description: "How to get reliable JSON and other structured formats from Claude using prefill-and-stop, JSON output mode, and tool-use coercion."
-section: "foundations"
-order: 5
+section: "prompting"
+order: 2
 tags: ["structured-output", "messages-api", "prompt-engineering", "json"]
 lastVerified: "2026-06-01"
 ---
@@ -137,7 +137,7 @@ print(json.dumps(tool_input, indent=2))
 
 `tool_choice` with `type: "tool"` forces Claude to call the specified tool. The `input` field on the `tool_use` content block contains your structured data, already validated against the schema.
 
-For more on tool use beyond structured output, see [Tool Use](/patterns/tool-use).
+For more on tool use beyond structured output, see [Tool Use](/the-api/tool-use).
 
 ## Which Technique to Use
 
@@ -150,7 +150,7 @@ For more on tool use beyond structured output, see [Tool Use](/patterns/tool-use
 For production systems, prefer JSON output mode or tool-use coercion. Both guarantee schema-conformant output. The prefill technique is faster to set up but requires you to handle parse failures yourself.
 
 :::tip
-Combine structured output with a [system prompt](/foundations/system-prompts) for best results. A system prompt like `"Extract information exactly as requested. Do not add commentary."` reduces the chance of Claude adding narrative text alongside structured data.
+Combine structured output with a [system prompt](/prompting/system-prompts) for best results. A system prompt like `"Extract information exactly as requested. Do not add commentary."` reduces the chance of Claude adding narrative text alongside structured data.
 :::
 
 ## Parsing and Validation
@@ -188,8 +188,8 @@ person = Person.model_validate(tool_input)
 
 ## Related
 
-- [Messages API](/foundations/messages-api) — request structure and `stop_sequences` parameter
-- [System Prompts & Prompt Design](/foundations/system-prompts) — prompt techniques that improve structured output quality
-- [Tool Use](/patterns/tool-use) — full tool-use patterns beyond structured output coercion
-- [Extraction](/patterns/extraction) — end-to-end extraction pipelines
+- [Messages API](/the-api/messages-api) — request structure and `stop_sequences` parameter
+- [System Prompts & Prompt Design](/prompting/system-prompts) — prompt techniques that improve structured output quality
+- [Tool Use](/the-api/tool-use) — full tool-use patterns beyond structured output coercion
+- [Extraction](/prompting/extraction) — end-to-end extraction pipelines
 - [Anthropic structured output docs](https://docs.anthropic.com/en/docs/build-with-claude/structured-outputs)

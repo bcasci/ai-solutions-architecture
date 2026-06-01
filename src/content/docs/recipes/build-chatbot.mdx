@@ -76,7 +76,7 @@ if __name__ == "__main__":
 4. **Clean exit** handles `Ctrl+C`, `EOF`, and text commands gracefully.
 
 :::tip
-For production chatbots, replace the naive trim with a smarter strategy: summarize old messages into a rolling context block, or use a database to store and retrieve relevant history. See [RAG](/patterns/rag) for retrieval-based approaches.
+For production chatbots, replace the naive trim with a smarter strategy: summarize old messages into a rolling context block, or use a database to store and retrieve relevant history. See [RAG](/agents/rag) for retrieval-based approaches.
 :::
 
 :::warning
@@ -85,7 +85,7 @@ The `messages` list is your token budget. Each turn adds to it. A 20-turn conver
 
 ## Related
 
-- [Streaming](/foundations/streaming) — streaming mechanics and event types
-- [System Prompts](/foundations/system-prompts) — shaping Claude's behavior
+- [Streaming](/the-api/streaming) — streaming mechanics and event types
+- [System Prompts](/prompting/system-prompts) — shaping Claude's behavior
 - [Cost Optimization](/production/cost-optimization) — managing token spend
 - [Anthropic docs — Streaming](https://docs.anthropic.com/en/api/streaming) — streaming API reference

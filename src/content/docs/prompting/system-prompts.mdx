@@ -1,8 +1,8 @@
 ---
 title: "System Prompts & Prompt Design"
 description: "How to use system prompts, write clear instructions, structure prompts with XML tags, and provide few-shot examples for reliable Claude output."
-section: "foundations"
-order: 3
+section: "prompting"
+order: 1
 tags: ["system-prompts", "prompt-engineering", "prompts", "messages-api"]
 lastVerified: "2026-06-01"
 ---
@@ -193,7 +193,7 @@ prompt = """Classify the sentiment of the following text as Positive, Negative, 
 ```
 
 :::tip
-Source examples from your best evaluation outputs. If you have an [evaluation pipeline](/patterns/evaluation), use inputs that scored highest. Include a `<reasoning>` tag to explain *why* the output is correct — this helps Claude generalize the pattern, not just mimic the format.
+Source examples from your best evaluation outputs. If you have an [evaluation pipeline](/prompting/evaluation), use inputs that scored highest. Include a `<reasoning>` tag to explain *why* the output is correct — this helps Claude generalize the pattern, not just mimic the format.
 :::
 
 Use multi-shot when you need to handle sarcasm, ambiguity, varying input formats, or complex output structures like specific JSON schemas.
@@ -244,8 +244,8 @@ This prompt uses: a system prompt (role + constraint), XML tags (structure), few
 
 ## Related
 
-- [Messages API](/foundations/messages-api) — request structure and response handling
-- [Structured Output](/foundations/structured-output) — getting JSON and other formats from Claude
-- [Classification & Routing](/patterns/classification-and-routing) — applying classification at scale
-- [Evaluation](/patterns/evaluation) — measuring prompt quality with automated pipelines
+- [Messages API](/the-api/messages-api) — request structure and response handling
+- [Structured Output](/prompting/structured-output) — getting JSON and other formats from Claude
+- [Orchestration Patterns](/agents/orchestration) — applying classification at scale
+- [Evaluation](/prompting/evaluation) — measuring prompt quality with automated pipelines
 - [Anthropic prompt engineering guide](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview)

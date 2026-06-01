@@ -8,9 +8,9 @@ const docs = await getCollection('docs', ({ data }) => !data.draft);
 
 const sectionMeta = [
   { key: 'start-here', label: 'Start Here', description: 'Get up and running with Claude in 60 seconds.', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { key: 'foundations', label: 'Foundations', description: 'Core API concepts every builder needs.', color: 'text-blue-600', bg: 'bg-blue-50' },
-  { key: 'patterns', label: 'Patterns', description: 'Battle-tested architectures for common tasks.', color: 'text-violet-600', bg: 'bg-violet-50' },
-  { key: 'agents', label: 'Agents', description: 'Autonomous systems, MCP, and Claude Code.', color: 'text-orange-600', bg: 'bg-orange-50' },
+  { key: 'the-api', label: 'The API', description: 'Request mechanics — models, messages, streaming, multimodal input, and tool use.', color: 'text-blue-600', bg: 'bg-blue-50' },
+  { key: 'prompting', label: 'Prompting', description: 'Prompt engineering — system prompts, structured output, evaluation, and extraction.', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+  { key: 'agents', label: 'Agents', description: 'RAG, orchestration, autonomous systems, MCP, and Claude Code.', color: 'text-orange-600', bg: 'bg-orange-50' },
   { key: 'production', label: 'Production', description: 'Ship reliably at scale.', color: 'text-red-600', bg: 'bg-red-50' },
   { key: 'recipes', label: 'Recipes', description: 'Copy-paste solutions for common tasks.', color: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'reference', label: 'Reference', description: 'Quick lookups and external resources.', color: 'text-gray-600', bg: 'bg-gray-50' },

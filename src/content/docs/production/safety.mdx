@@ -228,7 +228,7 @@ This approach adds latency (two API calls) but provides structured, explainable 
 
 ## Structured Output for Safety
 
-When Claude's output feeds into downstream systems, use [structured output](/foundations/structured-output) to constrain the response format. This prevents unexpected content from reaching systems that parse Claude's output programmatically.
+When Claude's output feeds into downstream systems, use [structured output](/prompting/structured-output) to constrain the response format. This prevents unexpected content from reaching systems that parse Claude's output programmatically.
 
 ```python
 from anthropic import Anthropic
@@ -261,9 +261,9 @@ classification = json.loads(response.content[0].text)
 
 ## Related
 
-- [System Prompts](/foundations/system-prompts) — system prompt design fundamentals
-- [Structured Output](/foundations/structured-output) — constraining response format
-- [Classification & Routing](/patterns/classification-and-routing) — using Claude for content classification
+- [System Prompts](/prompting/system-prompts) — system prompt design fundamentals
+- [Structured Output](/prompting/structured-output) — constraining response format
+- [Orchestration Patterns](/agents/orchestration) — using Claude for content classification
 - [Error Handling & Retries](/production/error-handling) — handling moderation-related errors
 - [Monitoring](/production/monitoring) — tracking safety metrics
 - [Anthropic usage policy](https://www.anthropic.com/policies/aup)

@@ -1,8 +1,8 @@
 ---
 title: "Retrieval Augmented Generation"
 description: "Build a RAG pipeline that chunks documents, generates embeddings, retrieves relevant context, and feeds it to Claude for grounded answers."
-section: "patterns"
-order: 2
+section: "agents"
+order: 3
 tags: ["rag", "context-management", "embeddings", "search"]
 lastVerified: "2026-06-01"
 ---
@@ -320,10 +320,10 @@ The architecture is extensible. Any search index that returns ranked results can
 
 ## Related
 
-- [Tool Use](/patterns/tool-use) — give Claude tools to query your RAG pipeline dynamically
-- [System Prompts](/foundations/system-prompts) — craft the generation prompt for RAG responses
-- [Structured Output](/foundations/structured-output) — extract structured data from retrieved chunks
+- [Tool Use](/the-api/tool-use) — give Claude tools to query your RAG pipeline dynamically
+- [System Prompts](/prompting/system-prompts) — craft the generation prompt for RAG responses
+- [Structured Output](/prompting/structured-output) — extract structured data from retrieved chunks
 - [Cost Optimization](/production/cost-optimization) — RAG reduces per-query token cost
-- [Evaluation](/patterns/evaluation) — measure RAG retrieval and answer quality
+- [Evaluation](/prompting/evaluation) — measure RAG retrieval and answer quality
 - [Anthropic RAG cookbook](https://github.com/anthropics/anthropic-cookbook/tree/main/misc/retrieval_augmented_generation)
 - [VoyageAI docs](https://docs.voyageai.com/)

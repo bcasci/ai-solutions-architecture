@@ -5,8 +5,8 @@ const docs = await getCollection('docs', ({ data }) => !data.draft);
 
 const sectionMeta: Record<string, { label: string; order: number }> = {
   'start-here': { label: 'Start Here', order: 0 },
-  foundations: { label: 'Foundations', order: 1 },
-  patterns: { label: 'Patterns', order: 2 },
+  'the-api': { label: 'The API', order: 1 },
+  prompting: { label: 'Prompting', order: 2 },
   agents: { label: 'Agents', order: 3 },
   production: { label: 'Production', order: 4 },
   recipes: { label: 'Recipes', order: 5 },

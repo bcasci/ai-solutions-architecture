@@ -9,8 +9,8 @@ const docs = defineCollection({
     description: z.string(),
     section: z.enum([
       'start-here',
-      'foundations',
-      'patterns',
+      'the-api',
+      'prompting',
       'agents',
       'production',
       'recipes',

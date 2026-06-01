@@ -1,8 +1,8 @@
 ---
-title: "Classification & Routing"
+title: "Orchestration Patterns"
 description: "How to classify inputs and route them to specialized handlers using chaining, routing, and parallelization workflow patterns."
-section: "patterns"
-order: 3
+section: "agents"
+order: 2
 tags: ["orchestration", "classification", "routing", "chaining", "parallelization"]
 lastVerified: "2026-06-01"
 ---
@@ -108,7 +108,7 @@ print(response)
 ```
 
 :::tip
-Use [structured output](/foundations/structured-output) for the classification step. Returning a constrained category name (not free-form text) eliminates parsing errors in the routing logic.
+Use [structured output](/prompting/structured-output) for the classification step. Returning a constrained category name (not free-form text) eliminates parsing errors in the routing logic.
 :::
 
 ### When to Route
@@ -295,9 +295,9 @@ These patterns compose. A routing step can send inputs to different chains, each
 
 ## Related
 
-- [Tool Use](/patterns/tool-use) --- give specialized handlers access to external tools
-- [Structured Output](/foundations/structured-output) --- enforce clean classifier output for routing
-- [System Prompts](/foundations/system-prompts) --- tune each handler with role-specific context
-- [Evaluation & Testing](/patterns/evaluation) --- measure whether routing improves response quality
+- [Tool Use](/the-api/tool-use) --- give specialized handlers access to external tools
+- [Structured Output](/prompting/structured-output) --- enforce clean classifier output for routing
+- [System Prompts](/prompting/system-prompts) --- tune each handler with role-specific context
+- [Evaluation & Testing](/prompting/evaluation) --- measure whether routing improves response quality
 - [Agent Architecture](/agents/agent-architecture) --- when to use agents vs. orchestrated workflows
 - [Anthropic docs: Prompt engineering](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering)
