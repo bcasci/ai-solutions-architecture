@@ -15,29 +15,27 @@ This page covers three decisions:
 
 ## Complexity Ladder
 
-Start simple. Add complexity only when the simpler approach fails.
+Start simple. Move up a step only when the simpler approach isn't enough.
 
-```mermaid
-flowchart TD
-    A[Can one prompt handle it?] -->|Yes| B[Single Prompt]
-    A -->|No| C[Are the steps sequential?]
-    C -->|Yes| D[Chain]
-    C -->|No| E[Are subtasks independent?]
-    E -->|Yes| F[Parallelize]
-    E -->|No| G[Does input type determine the handler?]
-    G -->|Yes| H[Route]
-    G -->|No| I[Is the plan unknowable ahead of time?]
-    I -->|Yes| J[Agent Loop]
-    I -->|No| K[Combine patterns]
-```
+**1. Single Prompt**
+**Use when:** the task is self-contained and one Claude call can handle it.
+One API call, one response. This covers more than you think — summarization, classification, extraction, code generation, Q&A over short documents. Try this first.
 
-| Pattern | What it is | Use when | Example |
-| --- | --- | --- | --- |
-| **Single prompt** | One API call | Task is self-contained | Summarize an email |
-| **[Chain](/agents/orchestration)** | Sequential Claude calls, each builds on the last | Steps have a natural order | Draft → revise → format |
-| **[Parallelize](/agents/orchestration)** | Independent subtasks run concurrently | Subtasks don't depend on each other | Grade an essay on 3 rubrics simultaneously |
-| **[Route](/agents/orchestration)** | Classify input, then dispatch to a specialized handler | Different input types need different treatment | Support tickets: billing vs. technical vs. general |
-| **[Agent loop](/agents/agent-architecture)** | Claude gets tools and decides its own plan | You can't predetermine the steps | "Research this topic and write a report" |
+**2. [Chain](/agents/orchestration)**
+**Use when:** the task has ordered steps where each builds on the last.
+Sequential Claude calls, each with a focused prompt. Draft → revise → format. Generate → validate → fix. Each step is simpler and more reliable than asking one prompt to do everything.
+
+**3. [Parallelize](/agents/orchestration)**
+**Use when:** subtasks are independent and don't need each other's output.
+Run multiple Claude calls concurrently, then aggregate results. Grade an essay on clarity, accuracy, and tone simultaneously. Faster wall-clock time than chaining, but higher total API cost.
+
+**4. [Route](/agents/orchestration)**
+**Use when:** different input types need different handling.
+A classifier sends each input to a specialized pipeline. Support tickets: billing → billing handler, technical → technical handler. Each handler gets its own prompt, tools, and context.
+
+**5. [Agent Loop](/agents/agent-architecture)**
+**Use when:** you can't predetermine the steps — Claude needs to plan and adapt.
+Give Claude tools and a goal. It decides what to do, observes results, and iterates. Use this for open-ended tasks like "research this topic and write a report." Higher flexibility, lower predictability.
 
 :::tip
 Default to the simplest pattern that works. A chain of 3 focused prompts will outperform a general-purpose agent on most structured tasks — and it's far easier to test, debug, and maintain.
