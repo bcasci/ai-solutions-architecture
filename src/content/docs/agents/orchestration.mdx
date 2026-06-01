@@ -1,12 +1,12 @@
 ---
 title: "Orchestration Patterns"
-description: "How to classify inputs and route them to specialized handlers using chaining, routing, and parallelization workflow patterns."
+description: "Workflow building blocks — chaining, routing, parallelization, and evaluator-optimizer patterns for multi-call Claude applications."
 section: "agents"
 order: 2
-tags: ["orchestration", "classification", "routing", "chaining", "parallelization"]
+tags: ["orchestration", "classification", "routing", "chaining", "parallelization", "evaluator-optimizer"]
 lastVerified: "2026-06-01"
 ---
-A single generic prompt rarely handles diverse inputs well. Classification and routing split incoming requests by type, then hand each type to a specialized handler. This page covers three orchestration patterns that make this work: routing, chaining, and parallelization.
+A single generic prompt rarely handles diverse inputs well. When you need multiple Claude calls — sequential steps, input-based dispatch, concurrent evaluations, or iterative refinement — these four composable patterns cover the ground.
 
 ## Routing: Classify Then Specialize
 
@@ -280,25 +280,101 @@ Each parallel branch gets specialized context rather than a single prompt that t
 Each parallel call has its own latency and token cost. Parallelization improves quality and throughput, but increases total API spend linearly with the number of branches.
 :::
 
+## Evaluator-Optimizer: Iterative Refinement
+
+An evaluator-optimizer loop generates output, scores it against criteria, and loops until a quality threshold is met. Unlike a simple chain (which has a fixed number of steps), the iteration count is determined at runtime.
+
+```mermaid
+graph LR
+    A[Generate] --> B[Evaluate]
+    B -->|Below threshold| A
+    B -->|Meets threshold| C[Final output]
+```
+
+```python
+import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+def generate(task: str, feedback: str = "") -> str:
+    """Generate or revise output based on feedback."""
+    prompt = f"Task: {task}"
+    if feedback:
+        prompt += f"\n\nPrevious attempt feedback:\n{feedback}\n\nRevise to address all issues."
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.content[0].text
+
+def evaluate(output: str, criteria: str) -> dict:
+    """Score output against criteria. Returns pass/fail and feedback."""
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=512,
+        messages=[{
+            "role": "user",
+            "content": f"""Evaluate this output against the criteria below.
+
+<criteria>{criteria}</criteria>
+<output>{output}</output>
+
+Respond with JSON: {{"pass": true/false, "score": 1-10, "feedback": "specific issues to fix"}}"""
+        }],
+    )
+    return json.loads(response.content[0].text)
+
+def eval_optimize(task: str, criteria: str, max_rounds: int = 3) -> str:
+    """Generate-evaluate loop with a maximum iteration limit."""
+    feedback = ""
+    for round in range(max_rounds):
+        output = generate(task, feedback)
+        result = evaluate(output, criteria)
+
+        if result["pass"]:
+            return output
+        feedback = result["feedback"]
+
+    return output  # Return best effort after max rounds
+
+# Usage
+final = eval_optimize(
+    task="Write a Python function that validates email addresses using regex.",
+    criteria="Function must handle edge cases (plus addressing, subdomains, "
+             "international TLDs). Must include type hints. Must include "
+             "at least 3 test cases as assertions.",
+)
+print(final)
+```
+
+The evaluator and generator can use different models — a cheaper model generates, a more capable one evaluates. Always set `max_rounds` to prevent runaway loops.
+
+:::tip
+The evaluator-optimizer pattern works best when the evaluation criteria are concrete and measurable. Vague criteria like "make it better" produce vague feedback loops. Specific criteria like "must include error handling for network timeouts" give the generator something actionable to fix.
+:::
+
 ## Choosing a Pattern
 
-Start by asking three questions about your task:
+These four patterns are composable building blocks — not a progression. Ask these questions to pick the right ones:
 
-1. **Does the input type determine what happens next?** Different input categories need different prompts, tools, or pipelines → **Route** first, then handle each category with the appropriate pattern.
-
-2. **Do the steps depend on each other?** Step 2 needs the output of step 1 → **Chain** them sequentially. Each step gets a focused prompt that builds on the previous output.
-
-3. **Are the subtasks independent?** Multiple evaluations, checks, or analyses that don't need each other's output → **Parallelize** and aggregate the results.
+1. **Does the input type determine what happens next?** → **Route** to specialized handlers.
+2. **Do the steps depend on each other?** → **Chain** them sequentially.
+3. **Are the subtasks independent?** → **Parallelize** and aggregate.
+4. **Does the output need iterative refinement?** → **Evaluator-Optimizer** loop.
 
 | Pattern | Choose when | Example | Trade-off |
 | --- | --- | --- | --- |
-| **Routing** | Input varies by type and each type needs different handling | Support tickets: billing → billing pipeline, technical → technical pipeline | Extra classification call, but each handler is specialized |
+| **Routing** | Input varies by type, each type needs different handling | Support tickets: billing → billing handler, technical → technical handler | Extra classification call, but each handler is specialized |
 | **Chaining** | Task has ordered steps where each builds on the last | Draft → fact-check → revise → format | Added latency (sequential), but each step is focused |
 | **Parallelization** | Subtasks are independent and can run concurrently | Grade an essay on clarity, accuracy, and tone simultaneously | Higher total API cost, but lower wall-clock time |
+| **Evaluator-Optimizer** | Output quality varies and needs iterative refinement | Code generation with test validation, content with quality scoring | Higher total API cost, but output meets a defined quality bar |
 
 These patterns compose. A routing step can send inputs to different chains, each of which may use parallelization internally. A common production pattern: route by input type, chain within each handler, parallelize independent evaluations at the end.
 
-See [Choosing Your Strategy](/start-here/choosing-your-strategy) for the broader decision of when orchestration is the right approach vs. a single prompt or an agent loop.
+See [Planning Your Build](/start-here/choosing-your-strategy) for the broader decision of when orchestration is the right approach vs. a single prompt or an agent loop.
 
 ## Related
 

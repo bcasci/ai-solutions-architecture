@@ -1,9 +1,9 @@
 ---
 title: "Claude Code: Skills & SDK"
 description: "Author reusable skills with SKILL.md for on-demand Claude Code expertise, build multi-file skill packages, and drive Claude Code programmatically with the Agent SDK."
-section: "agents"
-order: 7
-tags: ["claude-code", "skills-authoring", "agent-sdk", "agents"]
+section: "claude-code"
+order: 3
+tags: ["claude-code", "skills-authoring", "agent-sdk"]
 lastVerified: "2026-06-01"
 ---
 Skills are folders of instructions that Claude Code discovers and loads on demand. Unlike CLAUDE.md (always loaded) or slash commands (manually invoked), skills activate automatically when Claude recognizes your request matches a skill's description. The Agent SDK lets you run the same Claude Code agent loop from TypeScript or Python scripts, enabling batch automation and CI/CD integration.
@@ -17,7 +17,7 @@ Claude Code has five customization mechanisms. Choosing the right one matters:
 | `CLAUDE.md` | Every conversation | Project-wide standards | Build commands, coding style, architecture notes |
 | Skills | On demand (semantic match) | Task-specific expertise | PR reviews, onboarding, audits, specialized procedures |
 | Slash commands | Explicit invocation (`/cmd`) | Repeatable tasks | Test generation, dependency audits, deploy steps |
-| [Hooks](/agents/claude-code-hooks) | Event-driven (tool calls) | Automation | Formatting, testing, access control |
+| [Hooks](/claude-code/hooks) | Event-driven (tool calls) | Automation | Formatting, testing, access control |
 | [MCP servers](/mcp/mcp) | Always available | External integrations | Databases, browsers, APIs |
 
 If you find yourself explaining the same thing to Claude repeatedly, that's a skill waiting to be written. If it should apply to every conversation, put it in CLAUDE.md instead.
@@ -275,7 +275,7 @@ The package name is `@anthropic-ai/claude-agent-sdk` (TypeScript) or `claude-age
 
 - **Batch processing:** Run Claude against every file in a directory
 - **CI/CD pipelines:** Automated code review, test generation, documentation updates
-- **Hooks:** The AI-reviews-AI pattern in [hooks](/agents/claude-code-hooks) uses the SDK to launch a second Claude instance
+- **Hooks:** The AI-reviews-AI pattern in [hooks](/claude-code/hooks) uses the SDK to launch a second Claude instance
 - **Custom tooling:** Build internal developer tools powered by Claude Code's agent loop
 
 ## Troubleshooting Skills
@@ -292,8 +292,8 @@ Run `claude --debug` to see skill loading errors. The agent skills verifier tool
 
 ## Related
 
-- [Claude Code: Basics & Context](/agents/claude-code-basics) — setup, CLAUDE.md, and session workflows
-- [Claude Code: Hooks & Automation](/agents/claude-code-hooks) — event-driven automation and CI/CD
+- [Claude Code: Basics & Context](/claude-code/basics) — setup, CLAUDE.md, and session workflows
+- [Claude Code: Hooks & Automation](/claude-code/hooks) — event-driven automation and CI/CD
 - [Agent Architecture](/agents/agent-architecture) — how agent loops work
 - [Multi-Agent Systems](/agents/multi-agent-systems) — subagent patterns and coordination
 - [Tool Use](/the-api/tool-use) — the tool use pattern underlying skills and the SDK

@@ -1,101 +1,151 @@
 ---
-title: "Choosing Your Strategy"
-description: "Decide how to structure your Claude integration — single prompts, chains, RAG, tools, agents, or MCP — based on what your task actually needs."
+title: "Planning Your Build"
+description: "Decide how to structure your Claude integration — pick your starting point, choose the right level of complexity, and connect Claude to knowledge and services."
 section: "start-here"
-order: 3
-tags: ["architecture", "decision-making", "strategy"]
+order: 2
+tags: ["architecture", "decision-making", "strategy", "api", "claude-code", "agent-sdk"]
 lastVerified: "2026-06-01"
 ---
-You've picked your platform ([API, Claude Code, or Agent SDK](/start-here/choose-your-path)). Now pick the right pattern. Most over-engineering happens here — teams reach for agents when a chain would do, or build RAG when the document fits in a single prompt.
+Most over-engineering happens before a single line of code is written. Teams reach for agents when a prompt would do, build RAG when the document fits in context, or add orchestration layers that only slow things down. This page helps you make the right architectural decisions upfront.
 
-This page covers three decisions:
-1. **How complex should my system be?** (complexity ladder)
-2. **How do I give Claude the right knowledge?** (knowledge strategy)
-3. **How do I connect Claude to external services?** (integration strategy)
+## Pick Your Starting Point
 
-## Complexity Ladder
+Three products, three use cases. You can combine them in a single project.
 
-Start simple. Move up a step only when the simpler approach isn't enough. These patterns compose — a router can dispatch to chains, and a chain step can parallelize internally. Pick the simplest combination that meets your quality bar.
+| Product | Use when | You manage |
+| --- | --- | --- |
+| **Messages API** | Building product features — chatbots, content generation, extraction, RAG pipelines, any custom app | Prompt construction, conversation state, tool definitions, error handling |
+| **Claude Code** | Automating development workflows — writing code, exploring codebases, running multi-step dev tasks | `.claude/` config, commands, hooks, skills |
+| **Agent SDK** | Building autonomous multi-step agents that plan, use tools, and make decisions in a loop | Agent definitions, tool registrations, guardrails |
 
-**1. Single Prompt**
-**Use when:** the task is self-contained, the context fits in the window, and one Claude call can handle it.
-One API call, one response. This covers more than you think — summarization, classification, extraction, short code generation, Q&A over small documents. Try this first.
+Most teams start with the **Messages API** for their product and **Claude Code** for their development workflow. Add the **Agent SDK** when you outgrow single-turn tool use in production.
 
-**2. [Chain](/agents/orchestration)**
-**Use when:** the output of step N depends on step N-1 being complete.
-Sequential Claude calls, each with a focused prompt. Draft → revise → format. Generate → validate → fix. Each step is simpler and more reliable than asking one prompt to do everything.
+Start here: [Quick Setup](/start-here/quick-setup) | [Claude Code Basics](/claude-code/basics) | [Agent Architecture](/agents/agent-architecture)
 
-**3. [Route](/agents/orchestration)**
-**Use when:** different input types need different handling.
-A classifier sends each input to a specialized pipeline. Support tickets: billing → billing handler, technical → technical handler. Each handler gets its own prompt, tools, and context. Simpler than it sounds — it's just a classifier plus a dispatch table.
+## How Complex Does Your System Need to Be?
 
-**4. [Parallelize](/agents/orchestration)**
-**Use when:** subtasks are independent and don't need each other's output.
-Run multiple Claude calls concurrently, then aggregate results. Process 50 customer reviews for sentiment, themes, and action items simultaneously. Faster wall-clock time than chaining, but higher total API cost and requires concurrency management.
+Start at the simplest level that works. Move up only when you hit a specific limitation.
 
-**5. Evaluator-Optimizer**
-**Use when:** output quality varies and you need iterative refinement.
-One Claude call generates, another evaluates, loop until a quality threshold is met. Code generation with test validation, content with quality scoring, SQL with execution verification. The iteration count isn't predetermined — that's what distinguishes this from a simple chain.
+### Level 1: Single Prompt
 
-**6. [Agent Loop](/agents/agent-architecture)**
-**Use when:** you can't predetermine the steps and Claude needs tools to interact with the world.
-Give Claude tools and a goal. It decides what to do, observes results, and iterates. Research across multiple sources, multi-step debugging, complex data analysis. Higher flexibility, lower predictability.
+One API call, one response. This covers more than you think — summarization, classification, extraction, code generation, Q&A, and even multi-step reasoning.
+
+You can structure a workflow *inside* the prompt itself:
+
+```
+Analyze this support ticket in three steps:
+1. Identify the core issue
+2. Classify severity (P0-P3)
+3. Draft a response
+
+<ticket>{ticket_text}</ticket>
+```
+
+Claude follows the steps within one call. No Python orchestration, no multiple API calls. **Try this first.**
+
+### Level 2: Scripted Workflow
+
+Your code orchestrates multiple API calls. You control the steps — Claude handles each one.
+
+```python
+# You define the flow. Each step is a focused Claude call.
+draft = generate(topic)          # Step 1: Claude generates
+issues = validate(draft)         # Step 2: your code or Claude checks
+final = revise(draft, issues)    # Step 3: Claude fixes
+```
+
+Four building blocks you can combine freely:
+
+| Pattern | What it does | Use when |
+| --- | --- | --- |
+| **[Chain](/agents/orchestration#chaining-sequential-steps)** | Sequential steps, each feeds the next | Output of step N depends on step N-1 |
+| **[Route](/agents/orchestration#routing-classify-then-specialize)** | Classify input, dispatch to a specialized handler | Different input types need different handling |
+| **[Parallelize](/agents/orchestration#parallelization-independent-sub-tasks)** | Run independent subtasks concurrently, aggregate | Subtasks don't need each other's output |
+| **[Evaluator-Optimizer](/agents/orchestration#evaluator-optimizer-iterative-refinement)** | Generate, evaluate, loop until quality threshold met | Output quality varies and needs iterative refinement |
+
+These are **composable tools in a toolbox**, not a ladder. A router can dispatch to chains. A chain step can parallelize internally. Pick whichever ones apply.
+
+### Level 3: Agent Loop
+
+Give Claude tools and a goal. It decides what to do, observes results, and iterates. You don't predetermine the steps — Claude does at runtime.
+
+```python
+# You provide tools and a goal. Claude decides the steps.
+while not done:
+    response = claude(messages, tools)
+    if response.wants_tool:
+        result = execute(response.tool_call)
+        messages.append(result)
+    else:
+        done = True
+```
+
+Best for: research across multiple sources, multi-step debugging, complex data analysis where the path depends on what Claude discovers along the way.
+
+See [Agent Architecture](/agents/agent-architecture) for the full pattern with code.
+
+### When to Escalate
+
+| Move from | Move to | When |
+| --- | --- | --- |
+| Single prompt | Scripted workflow | You need programmatic validation between steps, context window is too small, you need tool calls between steps, or a single prompt violates too many constraints |
+| Scripted workflow | Agent loop | You genuinely can't predetermine the steps — the task requires exploration or the tool-calling pattern is open-ended |
 
 :::tip
-Everything from Single Prompt through Evaluator-Optimizer has predictable execution — you know the steps, cost, and latency upfront. Agent loops are fundamentally different: non-deterministic, potentially unbounded, and harder to debug. Cross that line deliberately.
+Everything at Level 1 and Level 2 has predictable execution — you know the steps, cost, and latency upfront. Agent loops are fundamentally different: non-deterministic, potentially unbounded, and harder to debug. Cross that line deliberately.
 :::
 
-## Knowledge Strategy
+## How Does Claude Get Knowledge?
 
-How you give Claude information depends on how much you have and how often it changes.
+How you give Claude information depends on how much you have and how often it changes. This decision is independent of your complexity level above.
 
 | Strategy | How it works | Use when | Tradeoff |
 | --- | --- | --- | --- |
-| **Direct context** | Paste content into the prompt | Content fits in the context window and queries are infrequent | Simplest. No infrastructure. Cost scales with input size per query. Quality may degrade for very long contexts. |
-| **Direct context + [prompt caching](/production/cost-optimization)** | Cache a large static prefix, pay full cost only once | Same content is queried repeatedly | ~90% input cost reduction on cached tokens. Best of both worlds for static corpora under ~200K tokens. |
-| **[RAG](/retrieval/rag)** | Chunk, embed, retrieve relevant pieces | Documents exceed the context window, or you have many documents | Better cost/latency at scale. Requires embedding pipeline, vector store, and chunking strategy tuning. |
-| **Tool-based retrieval** | Give Claude a search [tool](/the-api/tool-use) and let it query on demand | Data is live, dynamic, or requires structured queries (SQL, APIs) | Most flexible. Claude decides what to search for. May make multiple sequential tool calls, increasing latency. |
+| **Direct context** | Paste content into the prompt | Content fits in the context window and queries are infrequent | Simplest. No infrastructure. Cost scales with input size. |
+| **Direct context + [prompt caching](/production/cost-optimization)** | Cache a large static prefix, pay full cost only once | Same content is queried repeatedly | ~90% input cost reduction on cached tokens. Best for static corpora under ~200K tokens. |
+| **[RAG](/retrieval/rag)** | Chunk, embed, retrieve relevant pieces | Documents exceed the context window, or you have many documents | Better cost/latency at scale. Requires embedding pipeline and vector store. |
+| **Tool-based retrieval** | Give Claude a search [tool](/the-api/tool-use) and let it query on demand | Data is live, dynamic, or requires structured queries (SQL, APIs) | Most flexible. Claude decides what to search for. May increase latency. |
 
 **Decision shortcut:**
-- **< 50 pages** of static content → try direct context first. Add [prompt caching](/production/cost-optimization) if you're querying the same content repeatedly.
-- **50+ pages** or growing corpus → [RAG](/retrieval/rag). Preprocess once, retrieve per query.
-- **Live data** (databases, APIs, dashboards) → tool-based retrieval. RAG adds indexing lag that makes it a poor fit for fast-changing data.
+- **< 50 pages** of static content — try direct context first. Add [prompt caching](/production/cost-optimization) if you're querying repeatedly.
+- **50+ pages** or growing corpus — [RAG](/retrieval/rag). Preprocess once, retrieve per query.
+- **Live data** (databases, APIs, dashboards) — tool-based retrieval. RAG adds indexing lag.
 
 You can combine strategies. A common production pattern: RAG for your documentation corpus + a tool for live database queries.
 
-## Integration Strategy
+## How Does Claude Connect to Services?
 
-When Claude needs to call external services, you have two paths.
+When Claude needs to call external services, you choose how to define and package the tools.
 
-| Approach | How it works | Use when | Tradeoff |
-| --- | --- | --- | --- |
-| **[Direct tool definitions](/the-api/tool-use)** | Define tools inline in your API call with JSON schemas | Tools are specific to your app, few in number, tightly coupled to your logic | Zero overhead. You build and maintain everything. Gets unwieldy past ~15 tools. |
-| **[MCP](/mcp/mcp)** | Connect to MCP servers that expose tools via a standard protocol | Tools are reusable across projects, shared with a team, or available as pre-built servers | Ecosystem of pre-built servers. Adds IPC latency and a server process to manage. |
+| Approach | How it works | Use when |
+| --- | --- | --- |
+| **[Direct tool definitions](/the-api/tool-use)** | Define tools inline in your API call with JSON schemas | Tools are specific to your app, few in number, tightly coupled to your logic |
+| **[MCP](/mcp/mcp)** | Connect to MCP servers that expose tools via a standard protocol | Tools are reusable across projects, shared with a team, or available as pre-built servers |
 
 **Decision shortcut:**
-- Building **one app** with **a handful of custom tools** → define them directly. Fewer moving parts.
-- Tools should be **reusable**, **shared across projects**, or you want the **pre-built MCP ecosystem** → MCP.
-- **15+ tools** → consider MCP to avoid prompt bloat and improve tool selection accuracy.
-- Need **both** → start with direct tools, extract to MCP servers when you find yourself duplicating tool definitions across projects.
+- Building **one app** with **a handful of custom tools** — define them directly. Fewer moving parts.
+- Tools should be **reusable** or **shared across projects** — MCP.
+- **15+ tools** — consider MCP to avoid prompt bloat and improve tool selection accuracy.
+- Need **both** — start with direct tools, extract to MCP when you find yourself duplicating definitions.
 
-## Combining Strategies
+## Common Combinations
 
 Real applications mix patterns. Here's how common use cases map:
 
 | Use case | Complexity | Knowledge | Integration |
 | --- | --- | --- | --- |
-| Customer support bot | Route by ticket type → chain per type | RAG over help docs | Direct tools for ticket system |
+| Customer support bot | Route by ticket type, chain per handler | RAG over help docs | Direct tools for ticket system |
 | Code review assistant | Single prompt (small diffs) or chain (large PRs) | Direct context + tool retrieval for related files | Direct tools for CI/linting |
 | Research agent | Agent loop | Tool-based retrieval | MCP for web search + databases |
 | Document Q&A | Single prompt | RAG (or direct context + caching for small corpora) | None |
 | Content moderation | Single prompt with few-shot examples | Direct context | None |
-| Data pipeline | Chain | Tool-based retrieval (read from source) | Direct tools for database + APIs |
+| Data pipeline | Chain | Tool-based retrieval | Direct tools for database + APIs |
 
 ## Related
 
-- [Choose Your Path](/start-here/choose-your-path) — API vs Claude Code vs Agent SDK
+- [Quick Setup](/start-here/quick-setup) — API key, SDK install, first call
 - [Agent Architecture](/agents/agent-architecture) — workflows vs agents deep dive
-- [Orchestration Patterns](/agents/orchestration) — chaining, routing, parallelization
+- [Orchestration Patterns](/agents/orchestration) — chaining, routing, parallelization, evaluator-optimizer with code
 - [What is RAG](/retrieval/rag) — retrieval pipeline overview
 - [Tool Use](/the-api/tool-use) — giving Claude tools
 - [MCP](/mcp/mcp) — the standard protocol for tool integration

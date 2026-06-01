@@ -8,6 +8,7 @@ const EXPECTED_SECTIONS = [
   "Prompting",
   "RAG (Retrieval Augmented Generation)",
   "Agents",
+  "Claude Code",
   "MCP",
   "Production",
   "Recipes",

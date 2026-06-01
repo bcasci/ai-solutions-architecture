@@ -13,6 +13,7 @@ const docs = defineCollection({
       'prompting',
       'retrieval',
       'agents',
+      'claude-code',
       'mcp',
       'production',
       'recipes',

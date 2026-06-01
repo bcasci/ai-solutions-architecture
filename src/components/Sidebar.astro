@@ -9,10 +9,11 @@ const sectionMeta: Record<string, { label: string; order: number }> = {
   prompting: { label: 'Prompting', order: 2 },
   retrieval: { label: 'RAG (Retrieval Augmented Generation)', order: 3 },
   agents: { label: 'Agents', order: 4 },
-  mcp: { label: 'MCP', order: 5 },
-  production: { label: 'Production', order: 6 },
-  recipes: { label: 'Recipes', order: 7 },
-  reference: { label: 'Reference', order: 8 },
+  'claude-code': { label: 'Claude Code', order: 5 },
+  mcp: { label: 'MCP', order: 6 },
+  production: { label: 'Production', order: 7 },
+  recipes: { label: 'Recipes', order: 8 },
+  reference: { label: 'Reference', order: 9 },
 };
 
 // Group docs by section, sorted
@@ -38,7 +39,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '');
         <path d="M2 17l10 5 10-5" />
         <path d="M2 12l10 5 10-5" />
       </svg>
-      <span class="text-lg font-semibold tracking-tight">Solutions Arch</span>
+      <span class="text-lg font-semibold tracking-tight">Claude Solutions</span>
     </a>
 
     {sections.map((section) => (

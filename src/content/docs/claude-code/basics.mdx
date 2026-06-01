@@ -1,9 +1,9 @@
 ---
 title: "Claude Code: Basics & Context"
 description: "Set up Claude Code, manage context with CLAUDE.md, and use proven workflows to get better results from your terminal-based coding assistant."
-section: "agents"
-order: 5
-tags: ["claude-code", "context-management", "agents"]
+section: "claude-code"
+order: 1
+tags: ["claude-code", "context-management"]
 lastVerified: "2026-06-01"
 ---
 Claude Code is a terminal-based coding assistant that uses Claude's tool use capabilities to read files, run commands, edit code, and search the web — all from your command line. This page covers installation, context management, and the workflows that separate productive sessions from frustrating ones.
@@ -58,7 +58,7 @@ Claude Code walks through the generated file and asks you to approve each sectio
 | `CLAUDE.local.md` | Project, personal | No (gitignored) | Personal preferences, local paths, API keys references |
 | `~/.claude/CLAUDE.md` | All projects | No | Cross-project conventions (naming, style preferences) |
 
-All three are loaded into every conversation, so keep them focused. Task-specific procedures belong in [skills](/agents/claude-code-skills), not CLAUDE.md.
+All three are loaded into every conversation, so keep them focused. Task-specific procedures belong in [skills](/claude-code/skills), not CLAUDE.md.
 
 ### File References with @
 
@@ -163,8 +163,8 @@ Paste screenshots into Claude Code with `Ctrl+V` (not `Cmd+V` on macOS) to commu
 
 ## Related
 
-- [Claude Code: Hooks & Automation](/agents/claude-code-hooks) — automate formatting, testing, and safety checks
-- [Claude Code: Skills & SDK](/agents/claude-code-skills) — build reusable, on-demand instructions and drive Claude Code programmatically
+- [Claude Code: Hooks & Automation](/claude-code/hooks) — automate formatting, testing, and safety checks
+- [Claude Code: Skills & SDK](/claude-code/skills) — build reusable, on-demand instructions and drive Claude Code programmatically
 - [Agent Architecture](/agents/agent-architecture) — how Claude Code's agent loop works under the hood
 - [MCP](/mcp/mcp) — extend Claude Code with external tool servers
 - [Tool Use](/the-api/tool-use) — the tool use pattern that powers Claude Code

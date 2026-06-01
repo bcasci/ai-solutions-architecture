@@ -11,7 +11,8 @@ const sectionMeta = [
   { key: 'the-api', label: 'The API', description: 'Request mechanics — models, messages, streaming, multimodal input, and tool use.' },
   { key: 'prompting', label: 'Prompting', description: 'Prompt engineering — system prompts, structured output, evaluation, and extraction.' },
   { key: 'retrieval', label: 'RAG (Retrieval Augmented Generation)', description: 'Give Claude knowledge it doesn\'t have — chunking, embeddings, and RAG pipelines.' },
-  { key: 'agents', label: 'Agents', description: 'Orchestration, autonomous systems, multi-agent patterns, and Claude Code.' },
+  { key: 'agents', label: 'Agents', description: 'Orchestration patterns, autonomous agent loops, and multi-agent systems.' },
+  { key: 'claude-code', label: 'Claude Code', description: 'Set up, configure, and extend your terminal-based coding assistant.' },
   { key: 'mcp', label: 'MCP', description: 'Model Context Protocol — the standard for connecting Claude to external tools and data.' },
   { key: 'production', label: 'Production', description: 'Ship reliably at scale.' },
   { key: 'recipes', label: 'Recipes', description: 'Copy-paste solutions for common tasks.' },
@@ -26,7 +27,7 @@ const sections = sectionMeta.map((meta) => ({
 })).filter((s) => s.pages.length > 0);
 ---
 
-<BaseLayout title="Solutions Architecture — Anthropic">
+<BaseLayout title="Claude Solutions — Anthropic">
   <div class="flex min-h-screen">
     <Sidebar />
     <main class="min-w-0 flex-1">
@@ -62,7 +63,7 @@ const sections = sectionMeta.map((meta) => ({
         </svg>
         <div class="relative max-w-2xl">
           <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Build with Claude
+            Building with Claude
           </h1>
           <p class="mt-4 text-lg text-gray-400">
             Patterns, code, and practical guidance for building with Anthropic's Claude.
@@ -82,28 +83,28 @@ const sections = sectionMeta.map((meta) => ({
         </div>
       </div>
 
-      <!-- Section Cards -->
-      <div class="mx-auto max-w-4xl px-8 py-16 lg:px-12">
-        <div class="grid gap-6 sm:grid-cols-2">
+      <!-- Section Index -->
+      <div class="mx-auto max-w-3xl px-8 py-16 lg:px-12">
+        <div class="space-y-10">
           {sections.map((section) => (
-            <div class="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700">
-              <h2 class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+            <section>
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                 {section.label}
               </h2>
-              <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{section.description}</p>
-              <ul class="mt-4 space-y-1">
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-500">{section.description}</p>
+              <ul class="mt-3 space-y-1 border-l-2 border-gray-200 pl-4 dark:border-gray-800">
                 {section.pages.map((page) => (
                   <li>
                     <a
                       href={`/${page.id}`}
-                      class="text-sm text-gray-700 hover:text-indigo-600 hover:underline dark:text-gray-300 dark:hover:text-indigo-400"
+                      class="text-sm text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400"
                     >
                       {page.data.title}
                     </a>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           ))}
         </div>
       </div>

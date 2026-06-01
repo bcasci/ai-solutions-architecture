@@ -29,6 +29,7 @@ const sectionLabels: Record<string, string> = {
   prompting: 'Prompting',
   retrieval: 'RAG (Retrieval Augmented Generation)',
   agents: 'Agents',
+  'claude-code': 'Claude Code',
   mcp: 'MCP',
   production: 'Production',
   recipes: 'Recipes',
@@ -40,7 +41,7 @@ const sectionLabel = sectionLabels[section] ?? section.replace(/-/g, ' ');
 const showSectionNav = sectionPages.length >= 2;
 ---
 
-<BaseLayout title={`${title} — Solutions Architecture`}>
+<BaseLayout title={`${title} — Claude Solutions`}>
   <div class="flex min-h-screen">
     <Sidebar />
     <main class="min-w-0 flex-1">
