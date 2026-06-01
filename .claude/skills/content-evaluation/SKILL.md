@@ -14,7 +14,7 @@ Score a draft guide page against 7 criteria. Produce a verdict and revision inst
 ## Procedure
 
 1. Read the draft page
-2. Read `docs/content-inventory.md` to cross-reference source material for completeness
+2. Read `tmp/content-inventory.md` to cross-reference source material for completeness
 3. Score each criterion 1-5 using the rubric below
 4. Determine verdict based on thresholds
 5. List specific issues and revision instructions

@@ -9,7 +9,7 @@ metadata:
 
 # Content Extraction
 
-Extract content from a scraped web page into a standardized inventory record and append it to `docs/content-inventory.md`.
+Extract content from a scraped web page into a standardized inventory record and append it to `tmp/content-inventory.md`.
 
 ## Procedure
 
@@ -17,7 +17,7 @@ Extract content from a scraped web page into a standardized inventory record and
 2. Extract content into the categories below
 3. Assign topic tags from the tag list (see [references/topic-tags.md](references/topic-tags.md))
 4. Rate importance 1-5
-5. Append the record to `docs/content-inventory.md` (create the file if it doesn't exist)
+5. Append the record to `tmp/content-inventory.md` (create the file if it doesn't exist)
 
 ## Extraction Categories
 

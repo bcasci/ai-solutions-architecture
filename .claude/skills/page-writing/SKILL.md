@@ -14,7 +14,7 @@ Synthesize content inventory entries into an MDX guide page. Save to the correct
 ## Procedure
 
 1. Identify the page to write from the site map in `PLAN.md`
-2. Read `docs/content-inventory.md` and filter entries tagged for this topic
+2. Read `tmp/content-inventory.md` and filter entries tagged for this topic
 3. Check for existing related pages to avoid duplication and ensure cross-linking
 4. Consult Anthropic public docs (via context7 if available) for accuracy and completeness
 5. Write the page using the template in [assets/page-template.mdx](assets/page-template.mdx)
