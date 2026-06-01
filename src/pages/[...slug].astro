@@ -11,12 +11,18 @@ export async function getStaticPaths() {
 }
 
 const { doc, allDocs } = Astro.props;
-const { Content, headings } = await render(doc);
+const { Content } = await render(doc);
 
 // Sibling pages in same section, sorted by order
 const siblings = allDocs
   .filter((d) => d.data.section === doc.data.section)
   .sort((a, b) => a.data.order - b.data.order);
+
+const sectionPages = siblings.map((d) => ({
+  title: d.data.title,
+  href: `/${d.id}`,
+  isCurrent: d.id === doc.id,
+}));
 
 const currentIndex = siblings.findIndex((d) => d.id === doc.id);
 const prevPage = currentIndex > 0 ? siblings[currentIndex - 1] : null;
@@ -27,7 +33,7 @@ const nextPage = currentIndex < siblings.length - 1 ? siblings[currentIndex + 1]
   title={doc.data.title}
   description={doc.data.description}
   section={doc.data.section}
-  headings={headings}
+  sectionPages={sectionPages}
   prevPage={prevPage ? { title: prevPage.data.title, href: `/${prevPage.id}` } : null}
   nextPage={nextPage ? { title: nextPage.data.title, href: `/${nextPage.id}` } : null}
 >

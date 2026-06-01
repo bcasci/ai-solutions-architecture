@@ -3,10 +3,10 @@ import BaseLayout from './BaseLayout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import MobileMenuButton from '../components/MobileMenuButton.astro';
 
-interface HeadingInfo {
-  depth: number;
-  slug: string;
-  text: string;
+interface SectionPage {
+  title: string;
+  href: string;
+  isCurrent: boolean;
 }
 
 interface PageLink {
@@ -18,7 +18,7 @@ interface Props {
   title: string;
   description: string;
   section: string;
-  headings?: HeadingInfo[];
+  sectionPages?: SectionPage[];
   prevPage?: PageLink | null;
   nextPage?: PageLink | null;
 }
@@ -35,13 +35,9 @@ const sectionLabels: Record<string, string> = {
   reference: 'Reference',
 };
 
-const { title, description, section, headings = [], prevPage, nextPage } = Astro.props;
+const { title, description, section, sectionPages = [], prevPage, nextPage } = Astro.props;
 const sectionLabel = sectionLabels[section] ?? section.replace(/-/g, ' ');
-
-// TOC: show h2 headings when there are 2+
-const excludeFromToc = new Set(['related', 'quick-reference']);
-const tocHeadings = headings.filter((h) => h.depth === 2 && !excludeFromToc.has(h.slug));
-const showToc = tocHeadings.length >= 2;
+const showSectionNav = sectionPages.length >= 2;
 ---
 
 <BaseLayout title={`${title} — Solutions Architecture`}>
@@ -61,19 +57,25 @@ const showToc = tocHeadings.length >= 2;
         </h1>
         <p class="mt-4 text-lg text-gray-700 dark:text-gray-400">{description}</p>
 
-        <!-- On this page TOC -->
-        {showToc && (
-          <nav class="mt-8 rounded-lg border border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-800 dark:bg-gray-900" aria-label="On this page">
-            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">On this page</p>
+        <!-- Section navigation -->
+        {showSectionNav && (
+          <nav class="mt-8 rounded-lg border border-gray-200 bg-gray-50 px-5 py-4 dark:border-gray-800 dark:bg-gray-900" aria-label="Section contents">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">In this section</p>
             <ul class="mt-2 space-y-1">
-              {tocHeadings.map((h) => (
-                <li>
-                  <a
-                    href={`#${h.slug}`}
-                    class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    {h.text}
-                  </a>
+              {sectionPages.map((p) => (
+                <li class="flex items-center gap-2">
+                  {p.isCurrent ? (
+                    <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {p.title}
+                    </span>
+                  ) : (
+                    <a
+                      href={p.href}
+                      class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      {p.title}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
